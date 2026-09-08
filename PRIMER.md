@@ -233,7 +233,8 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | PRIMER.md für dieses Repo einführen | Ja — dieser PRIMER, verifiziert und bestätigt im ersten echten `fdo-squirrel`-Chat | 2026-09-08 |
 | Schrittnummerierung ggü. `fdox-visuals`-Entwurf | Entwurf war nie committet, daher hier neu geordnet: S0 (Verifikation, dieser Chat) und S1 (retroaktiv, Kernpipeline) neu eingeführt; ehemals S1–S6 wurden zu S2/S3/S4/S6/S7/S8; S5 (Aufräumen) neu. Ab jetzt gilt diese Zählung fest | 2026-09-08 |
 | `architecture.mermaid` in diesem Repo aktualisieren (S2) | Ja, umgesetzt — Quelle aus `fdox-visuals`s `step_architecture.py`-Struktur übernommen (nicht das SVG selbst, sondern die dort bereits korrigierte Box-/Kantenstruktur) | 2026-09-08 |
-| CITATION.cff-Datenverlust fixen? (S3) | Noch nicht entschieden — zwei Optionen: (a) `_normalize_citation()` um die fehlenden Felder erweitern, (b) so lassen und nur dokumentieren. Zahl korrigiert: 16 von 22, nicht 14 — betrifft auch `authors`/`identifiers` | 2026-09-08, offen, korrigiert |
+| CITATION.cff-Datenverlust fixen? (S3) | Option (a): `_normalize_citation()` erweitert. Bringt 17 von 22 statt 6 von 22 zum Ziel — die restlichen 5 (`cff-version`, `commit`, `message`, `references`, `type`) haben **keinen** `to_term` im Crosswalk-YAML, das ist eine separate, größere Entscheidung (siehe Notiz unten) | 2026-09-08 |
+| Für die 5 `to_term`-losen Felder auch noch `crosswalk.fdo-metadata.yaml` erweitern? | Noch nicht entschieden — eigene Entscheidung, nicht Teil von S3s Auftrag ("_normalize_citation() erweitern"). Erfordert, für jedes der 5 Felder ein sinnvolles RDF-Prädikat auszuwählen, nicht nur Python-Code | 2026-09-08, offen, neu |
 | `fdo_mermaid_old.py` + Root-`MD.cff.schema.yaml` aufräumen (S5) | Vorschlag: `fdo_mermaid_old.py` löschen (unbenutzt); `MD.cff.schema.yaml` löschen oder explizit als veraltet kennzeichnen — noch nicht entschieden | 2026-09-08, Vorschlag, neu |
 | Lokales MD.cff/CITATION.cff für `fdo-3d-packager` (Flos Vorschlag, dort S10) | In `fdo-3d-packager` umgesetzt und laut Parallel-Chat heute committet + gepusht — hier nicht verifiziert (anderes Repo). `fdo-squirrel`s S6 hängt davon ab; im nächsten `fdo-squirrel`-Chat prüfen, ob die Abhängigkeit damit erledigt ist | 2026-09-08, Notiz |
 | Instanz-Diagramme ("MD.cff ausgefüllt", "Files and Roles") hier statt in `fdo-3d-packager` (S8) | Bestätigt aus dem Entwurf übernommen — brauchen `fdo-squirrel`s eigene Sicht auf ein verarbeitetes Paket; `fdo_mermaid.py` ist Präzedenzfall für dieses Muster | 2026-09-08, Vorschlag |
@@ -259,7 +260,7 @@ groß sein (3D-Modelle im Beispielpaket).
 | S0 | PRIMER verifizieren: Entwurf gegen frischen Klon gegenprüfen, A4-Fragen aufnehmen | fdo-squirrel | — | **erledigt 2026-09-08** |
 | S1 | Repo-Skeleton + Kernpipeline (Ingest, Schema-Validierung, Crosswalks, RDF-Aufbau, Mermaid-Übersicht, Bundle-Finalisierung) | fdo-squirrel | — | **erledigt** (vor Einführung dieses PRIMERs, rückwirkend dokumentiert 2026-09-08) |
 | S2 | `architecture.mermaid`/`.png` im Repo aktualisieren (Quelle: `fdox-visuals` S4) | fdo-squirrel | S0 | **erledigt 2026-09-08** (Mermaid-Quelle; `.png`-Regeneration braucht lokales `mmdc`, siehe Teil C) |
-| S3 | CITATION.cff-Datenverlust entscheiden + ggf. fixen (A4, korrigiert: 16 von 22) | fdo-squirrel | S0 | offen |
+| S3 | CITATION.cff-Datenverlust entscheiden + fixen (Option a) | fdo-squirrel | S0 | **erledigt 2026-09-08** (17 von 22 Feldern; 5 bleiben ohne `to_term`, neuer Offener Punkt in Teil D) |
 | S4 | Determinismus prüfen (zwei Läufe, `fdo-metadata.ttl` vergleichen) | fdo-squirrel | S0 | offen |
 | S5 | Aufräumen: `fdo_mermaid_old.py`, Root-`MD.cff.schema.yaml` (A1 Befund 2b/8, neu) | fdo-squirrel | S0 | offen |
 | S6 | CIIC 81 real durchlaufen lassen, sobald `fdo-3d-packager` reale `MD.cff`/`CITATION.cff` liefert | fdo-squirrel | `fdo-3d-packager` S10 (laut Parallel-Chat heute erledigt — hier noch zu prüfen) | offen |
@@ -384,26 +385,88 @@ mmdc -i architecture.mermaid -o architecture.png -w 2400 -H 1200 --backgroundCol
 bestätigt — `mmdc` passt die tatsächliche Canvas-Größe ohnehin an den
 Diagramminhalt an.)
 
-## S3 — CITATION.cff-Datenverlust entscheiden (Vorschlag)
+## S3 — CITATION.cff-Datenverlust fixen
 
-**Ziel:** entscheiden, ob die 16 von 22 nie in RDF ankommenden
-CITATION.cff-Felder (A1 Befund 3) gefixt oder nur dokumentiert werden.
+**Ziel:** die 16 von 22 nie in RDF ankommenden CITATION.cff-Felder
+(A1 Befund 3) so weit wie mit einer Änderung an `_normalize_citation()`
+möglich zum Ziel bringen (A4, Option a).
 
 **Uploads:** Repo-Bundle (A5).
 
-**Substanz (Vorschlag, im Chat zu entscheiden):**
-- Option (a): `_normalize_citation()` um die fehlenden 16 Felder
-  erweitern (insbesondere `authors`/`identifiers` unter ihrem
-  Originalnamen zusätzlich durchreichen, damit die generische
-  Crosswalk-Regel greift — ohne die bestehenden `author_orcid`/
-  `author_name`/`identifier_<scheme>`-Sonderfelder zu entfernen, die
-  vermutlich anderswo gebraucht werden).
-- Option (b): Lücke im README dokumentieren, nichts am Code ändern.
+**Substanz:** `_normalize_citation()` in
+`crosswalks/citation_crosswalk_engine.py` reicht jetzt alle 22 CFF-Felder
+unter ihrem Originalnamen durch, nicht nur 6:
+- Direkte String-Durchreichung für `cff-version`, `commit`,
+  `date-released`, `doi`, `license-url`, `message`,
+  `repository-artifact`, `title`, `type`, `version` (zusätzlich zu den
+  schon funktionierenden `abstract`/`url`/`repository-code`/
+  `repository`/`license`/`keywords`).
+- `authors`/`contact`/`contributors` — neue Hilfsfunktion
+  `_person_names()` extrahiert lesbare Namen aus den CFF-Person-/
+  Entity-Objekten (bevorzugt `name`, sonst `given-names`+`family-names`);
+  `authors` wird zusätzlich zu den bestehenden `author_name`/
+  `author_orcid`-Feldern unter dem Originalnamen durchgereicht, damit die
+  `cff:authors`-Regel greift (die bisher ins Leere lief, weil kein Rule
+  je nach `author_name` gesucht hat).
+- `identifiers` — Werte zusätzlich als flache Liste unter dem
+  Originalnamen durchgereicht, neben den bestehenden
+  `identifier_<scheme>`-Einträgen.
+- `preferred-citation` (verschachteltes Citation-Objekt) — Titel/DOI/URL
+  als Label durchgereicht statt des rohen Dicts (das hätte eine
+  Python-Dict-Repräsentation als RDF-Literal erzeugt).
+- `references` (Liste von Reference-Objekten) — Titel der einzelnen
+  Referenzen als Liste durchgereicht.
 
-**Abnahme (Vorschlag):** je nach Option — (a) alle 22 Felder erreichen
-RDF für ein Testpaket mit vollständigem `CITATION.cff`, geprüft gegen
-einen zweiten Lauf; (b) README-Abschnitt beschreibt die Lücke konkret
-genug, dass jemand mit einem betroffenen `CITATION.cff` sie erkennt.
+**Abnahme:** für ein Testpaket mit vollständigem `CITATION.cff` erreichen
+so viele der 22 Felder RDF, wie `crosswalk.fdo-metadata.yaml` ein
+`to_term` dafür kennt; geprüft gegen `CitationCrosswalkEngine.crosswalk()`
+direkt (isoliert) und gegen das echte `example_fdo/CITATION.cff`.
+
+### Erledigt 2026-09-08
+
+**Wichtiger Befund während der Umsetzung:** "alle 22 Felder erreichen
+RDF" war als Abnahme zu optimistisch formuliert — `_normalize_citation()`
+zu erweitern reicht nicht für alle 22, weil `crosswalk.fdo-metadata.yaml`
+für **5 der 22 Felder gar kein `to_term`** definiert
+(`cff-version`, `commit`, `message`, `references`, `type` — die
+Crosswalk-Regel dafür hat `to_namespace: null`, ist also nur ein
+CFF-Dokumentationseintrag ohne RDF-Ziel). Selbst ein perfekt gefülltes
+`flat`-Dict würde für diese 5 keine Triple erzeugen, weil
+`CitationCrosswalkEngine.crosswalk()` jede Regel mit ungültigem `to_term`
+überspringt — unabhängig vom Wert. Das ist eine andere, größere
+Entscheidung (ein RDF-Prädikat für 5 Konzepte auswählen), nicht Teil
+dieses Schritts — siehe Teil D.
+
+**Tatsächliches Ergebnis:** mit synthetischen Testdaten (alle 22 Felder
+gesetzt) erzeugen jetzt **17 von 22** Feldern mindestens ein Triple
+(vorher 6). Mit dem echten `example_fdo/CITATION.cff` (10 gesetzte
+Felder, kein `identifiers`/`contact`/`contributors`/`preferred-citation`/
+`references` darin): **18 → 25 Triples**, neu u. a. `schema:author
+"Florian Thiery"`, `schema:datePublished "2025-01-15"`, `schema:name
+"Ogham3D Processing Toolkit"`, `schema:softwareVersion`/`schema:version`
+— Creator, Datum und Titel aus `CITATION.cff` erreichen jetzt RDF, vorher
+nicht.
+
+**Verifiziert:** `CitationCrosswalkEngine.crosswalk()` isoliert getestet,
+zweimal — einmal mit einem synthetischen `CITATION.cff`, das alle 22
+Felder setzt (bestätigt: genau die 17 mit `to_term` erzeugen Triples, die
+5 ohne bleiben stumm), einmal mit dem echten
+`example_fdo/CITATION.cff` über denselben Ladepfad, den `main.py`
+benutzt (`yaml.safe_load`, nicht `ingest.metadata_ingest.load_citation_cff`
+— das ist eine andere, hier ungenutzte Funktion mit anderer Rückgabeform,
+Verwechslungsgefahr beim Testen).
+
+**Nicht geschafft — neuer Befund, nicht Teil dieses Fixes:** ein
+End-to-End-Lauf über `main.py --package example_fdo` scheitert schon vor
+der CITATION.cff-Verarbeitung, weil `example_fdo/MD.cff` selbst weder
+gegen `schemas/md_cff/MD.cff-schema.yaml` validiert (`description`/
+`publishers` fehlen als Pflichtfelder, `keywords`/`license` haben die
+falsche Form) noch `md_cff_to_crosswalk()`s eigene Anforderungen erfüllt
+(`description` fehlt). Das bestehende Beispielpaket im Repo ist damit
+unabhängig von diesem Fix nicht lauffähig — neuer Punkt in Teil D.
+`crosswalk_to_rdf_turtle()` selbst wurde daher nicht End-to-End
+durchlaufen, nur `CitationCrosswalkEngine.crosswalk()` isoliert (das ist
+exakt die geänderte Komponente).
 
 ## S4 — Determinismus prüfen (Vorschlag)
 
@@ -502,6 +565,19 @@ inhaltlich vergleichbar — echte Werte statt der alten Beispieldaten).
 
 # Teil D — Offene Punkte
 
+- **`example_fdo/MD.cff` ist selbst nicht lauffähig** (neu, gefunden
+  während S3): validiert nicht gegen `schemas/md_cff/MD.cff-schema.yaml`
+  (`description`/`publishers` fehlen, `keywords`/`license` haben falsche
+  Form, `abstract`/`publisher` sind nicht erlaubte Zusatzfelder) und
+  erfüllt auch `md_cff_to_crosswalk()`s eigene Mindestanforderungen nicht
+  (`description` fehlt). `python main.py --package example_fdo` scheitert
+  dadurch schon vor jeder Crosswalk-Verarbeitung. Nicht Teil von S3,
+  eigener Schritt nötig, falls das Beispielpaket als Demo/CI-Fixture
+  dienen soll.
+- **5 CFF-Felder ohne `to_term`** (`cff-version`, `commit`, `message`,
+  `references`, `type`) — `_normalize_citation()` reicht sie seit S3
+  durch, aber `crosswalk.fdo-metadata.yaml` hat für keins ein RDF-Ziel.
+  Eigene Entscheidung, falls gewünscht (A4).
 - **Keine Tests, keine CI** (A1 Befund 5) — nicht bewertet, ob das ein
   Problem ist; einfach noch nie Thema gewesen.
 - **`fdo_overview.jpg` braucht `mmdc`/Node** (A1 Befund 4) — bewusste
