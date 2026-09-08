@@ -7,7 +7,6 @@ import yaml
 import zipfile
 import hashlib
 import json
-from datetime import datetime, timezone
 
 from crosswalks import CrosswalkRecord
 
@@ -77,8 +76,12 @@ class ProvenanceTracker:
                 "count": self._counters.get(f, 0),
             }
 
+        # No "generated_at" wall-clock timestamp here on purpose: this
+        # dict is serialised verbatim into rdf_modelling_report.json,
+        # which is itself hashed into a dcat:Distribution - a clock in
+        # the output would make fdo-metadata.ttl non-deterministic
+        # across two otherwise-identical runs (found in S4, PRIMER.md).
         return {
-            "generated_at": datetime.now(timezone.utc).isoformat(),
             "summary": agg_out,
         }
 
@@ -102,10 +105,16 @@ def _load_classification_rules(
         raise FileNotFoundError(f"Missing classification rules: {rules_path}")
 
     if tracker:
+        # A relative, package-internal path, not str(rules_path): the
+        # absolute path depends on where the repo happens to be checked
+        # out, which made this end up in rdf_modelling_report.json and
+        # made two otherwise-identical runs disagree (found in S4,
+        # PRIMER.md) - and would keep disagreeing across machines even
+        # at the exact same instant.
         tracker.record(
             field="file roles rules",
             source="classification_rules.yaml",
-            detail={"path": str(rules_path)},
+            detail={"path": "fdo/classification_rules.yaml"},
         )
 
     return yaml.safe_load(rules_path.read_text(encoding="utf-8"))

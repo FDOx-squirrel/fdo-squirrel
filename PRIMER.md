@@ -261,7 +261,7 @@ groß sein (3D-Modelle im Beispielpaket).
 | S1 | Repo-Skeleton + Kernpipeline (Ingest, Schema-Validierung, Crosswalks, RDF-Aufbau, Mermaid-Übersicht, Bundle-Finalisierung) | fdo-squirrel | — | **erledigt** (vor Einführung dieses PRIMERs, rückwirkend dokumentiert 2026-09-08) |
 | S2 | `architecture.mermaid`/`.png` im Repo aktualisieren (Quelle: `fdox-visuals` S4) | fdo-squirrel | S0 | **erledigt 2026-09-08** (Mermaid-Quelle; `.png`-Regeneration braucht lokales `mmdc`, siehe Teil C) |
 | S3 | CITATION.cff-Datenverlust entscheiden + fixen (Option a) | fdo-squirrel | S0 | **erledigt 2026-09-08** (17 von 22 Feldern; 5 bleiben ohne `to_term`, neuer Offener Punkt in Teil D) |
-| S4 | Determinismus prüfen (zwei Läufe, `fdo-metadata.ttl` vergleichen) | fdo-squirrel | S0 | offen |
+| S4 | Determinismus prüfen + fixen (zwei Läufe, `fdo-metadata.ttl` vergleichen) | fdo-squirrel | S0 | **erledigt 2026-09-08** (drei Nichtdeterminismus-Quellen gefunden und gefixt) |
 | S5 | Aufräumen: `fdo_mermaid_old.py`, Root-`MD.cff.schema.yaml` (A1 Befund 2b/8, neu) | fdo-squirrel | S0 | offen |
 | S6 | CIIC 81 real durchlaufen lassen, sobald `fdo-3d-packager` reale `MD.cff`/`CITATION.cff` liefert | fdo-squirrel | `fdo-3d-packager` S10 (laut Parallel-Chat heute erledigt — hier noch zu prüfen) | offen |
 | S7 | Freshford Holy Well (`freshford-st-lachtains-well-low-poly`) ebenso | fdo-squirrel | S6 | offen |
@@ -468,21 +468,73 @@ unabhängig von diesem Fix nicht lauffähig — neuer Punkt in Teil D.
 durchlaufen, nur `CitationCrosswalkEngine.crosswalk()` isoliert (das ist
 exakt die geänderte Komponente).
 
-## S4 — Determinismus prüfen (Vorschlag)
+## S4 — Determinismus prüfen + fixen
 
 **Ziel:** feststellen, ob zwei Läufe gegen dasselbe Paket bytegleiche
-`fdo-metadata.ttl` erzeugen (A2, bisher unbekannt).
+Ausgaben erzeugen (A2, bisher unbekannt), Ursache(n) bei Abweichung
+identifizieren und fixen.
 
-**Uploads:** ein Testpaket (`example_fdo/` ist bereits im Repo).
+**Uploads:** ein Testpaket.
 
-**Substanz (Vorschlag):** `python main.py --package example_fdo` zweimal
-laufen lassen, `output/fdo-metadata.ttl` per `cmp`/`diff` vergleichen.
-Bei Abweichung: Quelle identifizieren (Blank-Node-IDs? Dict-Reihenfolge?
-`datetime.now()` irgendwo versteckt?).
+**Substanz:** `python main.py --package <zip>` zweimal laufen lassen,
+alle fünf Ausgabedateien vergleichen (`fdo-metadata.ttl`,
+`rdf_modelling_report.json`/`.html`, `fdo_overview.mermaid`,
+`<slug>-fdo-bundle.zip`).
 
-**Abnahme (Vorschlag):** zwei Läufe, `cmp` ohne Ausgabe — oder, falls
-nicht deterministisch, die Ursache benannt und als neuer Schritt
-aufgenommen.
+**Abnahme:** zwei Läufe, `cmp` ohne Ausgabe für alle fünf Dateien.
+
+### Erledigt 2026-09-08
+
+**`example_fdo/` konnte nicht als Testpaket dienen** (Teil D, aus S3:
+`example_fdo/MD.cff` validiert nicht). Stattdessen ein separates,
+schema-valides Test-Fixture gebaut (gleiches 3D-Modell aus
+`example_fdo/data/model/`, `MD.cff` nach aktuellem Schema, `CITATION.cff`
+von `example_fdo` übernommen) — nur für diesen Test, nicht Teil des
+Patches, nicht committet.
+
+**Drei echte Nichtdeterminismus-Quellen gefunden, alle drei gefixt:**
+
+1. **`fdo/fdo_rdf.py`, `ProvenanceTracker.report()`** — schrieb
+   `"generated_at": datetime.now(timezone.utc).isoformat()` in jeden
+   Lauf von `rdf_modelling_report.json`. Da diese Datei selbst als
+   `dcat:Distribution` gehasht wird, machte das `fdo-metadata.ttl` bei
+   jedem Lauf anders. Feld ersatzlos entfernt (kein `RELEASE`-Konzept in
+   diesem Repo, ein erfundenes Datum wäre irreführender als gar keins).
+2. **`fdo/fdo_rdf.py`, `_load_classification_rules()`** — schrieb den
+   **absoluten** Dateisystempfad (`str(rules_path)`) in den Tracker,
+   der wiederum in `rdf_modelling_report.json` landet. Das hätte selbst
+   bei exakt gleichzeitigen Läufen unterschiedliche Ausgaben erzeugt,
+   sobald das Repo an einem anderen Ort ausgecheckt ist — schlimmer als
+   reine Zeitabhängigkeit. Ersetzt durch den festen, paketinternen
+   relativen Pfad `"fdo/classification_rules.yaml"`.
+3. **`main.py`, `write_html_report()`** — dieselbe Art Fund wie 1., nur
+   für `rdf_modelling_report.html` (`datetime.utcnow()` in der
+   "Generated:"-Zeile). Zeile ersatzlos entfernt.
+4. **`fdo_finalize.py`, `build_finished_bundle()`** — die neu
+   hinzugefügten Dateien wurden über `zipfile.write()` ins Bundle
+   geschrieben, was den echten Datei-Mtime (= Laufzeitpunkt) als
+   ZIP-Eintrags-Zeitstempel übernimmt. Das Bundle-ZIP war dadurch nicht
+   bytegleich, obwohl sein Inhalt es war. Auf feste `date_time=(1980, 1,
+   1, 0, 0, 0)` + `external_attr` für `0o644` umgestellt (`ZipInfo` +
+   `writestr()` statt `write()`) — dieselbe Konvention wie in
+   `fdo-3d-packager`/`fdox-visuals`.
+
+Alle drei ungenutzt gewordenen `datetime`-Importe (`fdo/fdo_rdf.py`,
+`main.py`) entfernt.
+
+**Verifiziert:** zwei frische Läufe gegen das Test-Fixture nach dem Fix
+— `fdo-metadata.ttl`, `rdf_modelling_report.json`, `.html`,
+`fdo_overview.mermaid` **und** `<slug>-fdo-bundle.zip` alle fünf
+bytegleich (`cmp`, keine Ausgabe). Vor dem Fix waren alle fünf
+unterschiedlich (die vier Nicht-ZIP-Dateien wegen 1./2./3., die
+kaskadieren, weil `fdo-metadata.ttl` die sha256-Hashes der anderen
+generierten Dateien enthält; das Bundle-ZIP zusätzlich wegen 4.).
+
+**Nicht geprüft:** Determinismus über verschiedene Python-/
+Dict-Iterationsreihenfolgen hinweg (nur derselbe Interpreter-Prozess,
+zweimal hintereinander) — für CPython ≥3.7 ist Dict-Reihenfolge
+Einfügereihenfolge, insofern nicht erwartungsgemäß ein Risiko, aber
+nicht über mehrere Python-Versionen getestet.
 
 ## S5 — Aufräumen (Vorschlag, neu)
 

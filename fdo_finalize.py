@@ -158,7 +158,16 @@ def build_finished_bundle(
                     shutil.copyfileobj(src, dst)
 
             for name, path in generated_by_name.items():
-                zout.write(path, arcname=name)
+                # zipfile.write() would stamp each entry with the file's
+                # real mtime, i.e. the wall-clock moment this run
+                # happened to write it - two otherwise-identical runs
+                # would then disagree on nothing but that timestamp
+                # (found in S4, PRIMER.md). Fixed epoch + mode instead,
+                # same convention as the rest of the family.
+                zinfo = zipfile.ZipInfo(filename=name, date_time=(1980, 1, 1, 0, 0, 0))
+                zinfo.compress_type = zipfile.ZIP_DEFLATED
+                zinfo.external_attr = 0o644 << 16
+                zout.writestr(zinfo, path.read_bytes())
 
         if superseded:
             print(

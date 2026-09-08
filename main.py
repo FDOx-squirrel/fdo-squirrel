@@ -3,7 +3,6 @@ import argparse
 import json
 import html
 import re
-from datetime import datetime
 
 from ingest.package_source import load_package_from_source
 from ingest import load_md_cff_schema, validate_against_schema
@@ -150,7 +149,10 @@ def write_html_report(json_path: Path, html_path: Path, context: dict):
     summary = report.get("summary", {})
 
     package_source = html.escape(str(context.get("package_source", "")))
-    generated_at = html.escape(datetime.utcnow().strftime("%Y-%m-%d %H:%M:%SZ"))
+    # No wall-clock "Generated: ..." line here on purpose: this file
+    # becomes a dcat:Distribution and is hashed as part of
+    # fdo-metadata.ttl, so a timestamp here made two otherwise-identical
+    # runs disagree (found in S4, PRIMER.md).
 
     def esc(x) -> str:
         return html.escape(str(x) if x is not None else "")
@@ -318,7 +320,6 @@ def write_html_report(json_path: Path, html_path: Path, context: dict):
         "</head><body>",
         "<h1>RDF Modelling Report</h1>",
         "<div class='meta'>",
-        f"<div><strong>Generated:</strong> <code>{generated_at}</code> (UTC)</div>",
     ]
     if package_source:
         parts.append(
