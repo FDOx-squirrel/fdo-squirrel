@@ -232,7 +232,7 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 |---|---|---|
 | PRIMER.md für dieses Repo einführen | Ja — dieser PRIMER, verifiziert und bestätigt im ersten echten `fdo-squirrel`-Chat | 2026-09-08 |
 | Schrittnummerierung ggü. `fdox-visuals`-Entwurf | Entwurf war nie committet, daher hier neu geordnet: S0 (Verifikation, dieser Chat) und S1 (retroaktiv, Kernpipeline) neu eingeführt; ehemals S1–S6 wurden zu S2/S3/S4/S6/S7/S8; S5 (Aufräumen) neu. Ab jetzt gilt diese Zählung fest | 2026-09-08 |
-| `architecture.mermaid` in diesem Repo aktualisieren (S2) | Vorschlag: ja, Quelle liegt fertig in `fdox-visuals` (A1 Befund 1) | 2026-09-08, Vorschlag |
+| `architecture.mermaid` in diesem Repo aktualisieren (S2) | Ja, umgesetzt — Quelle aus `fdox-visuals`s `step_architecture.py`-Struktur übernommen (nicht das SVG selbst, sondern die dort bereits korrigierte Box-/Kantenstruktur) | 2026-09-08 |
 | CITATION.cff-Datenverlust fixen? (S3) | Noch nicht entschieden — zwei Optionen: (a) `_normalize_citation()` um die fehlenden Felder erweitern, (b) so lassen und nur dokumentieren. Zahl korrigiert: 16 von 22, nicht 14 — betrifft auch `authors`/`identifiers` | 2026-09-08, offen, korrigiert |
 | `fdo_mermaid_old.py` + Root-`MD.cff.schema.yaml` aufräumen (S5) | Vorschlag: `fdo_mermaid_old.py` löschen (unbenutzt); `MD.cff.schema.yaml` löschen oder explizit als veraltet kennzeichnen — noch nicht entschieden | 2026-09-08, Vorschlag, neu |
 | Lokales MD.cff/CITATION.cff für `fdo-3d-packager` (Flos Vorschlag, dort S10) | In `fdo-3d-packager` umgesetzt und laut Parallel-Chat heute committet + gepusht — hier nicht verifiziert (anderes Repo). `fdo-squirrel`s S6 hängt davon ab; im nächsten `fdo-squirrel`-Chat prüfen, ob die Abhängigkeit damit erledigt ist | 2026-09-08, Notiz |
@@ -258,7 +258,7 @@ groß sein (3D-Modelle im Beispielpaket).
 |---|---|---|---|---|
 | S0 | PRIMER verifizieren: Entwurf gegen frischen Klon gegenprüfen, A4-Fragen aufnehmen | fdo-squirrel | — | **erledigt 2026-09-08** |
 | S1 | Repo-Skeleton + Kernpipeline (Ingest, Schema-Validierung, Crosswalks, RDF-Aufbau, Mermaid-Übersicht, Bundle-Finalisierung) | fdo-squirrel | — | **erledigt** (vor Einführung dieses PRIMERs, rückwirkend dokumentiert 2026-09-08) |
-| S2 | `architecture.mermaid`/`.png` im Repo aktualisieren (Quelle: `fdox-visuals` S4) | fdo-squirrel | S0 | offen |
+| S2 | `architecture.mermaid`/`.png` im Repo aktualisieren (Quelle: `fdox-visuals` S4) | fdo-squirrel | S0 | **erledigt 2026-09-08** (Mermaid-Quelle; `.png`-Regeneration braucht lokales `mmdc`, siehe Teil C) |
 | S3 | CITATION.cff-Datenverlust entscheiden + ggf. fixen (A4, korrigiert: 16 von 22) | fdo-squirrel | S0 | offen |
 | S4 | Determinismus prüfen (zwei Läufe, `fdo-metadata.ttl` vergleichen) | fdo-squirrel | S0 | offen |
 | S5 | Aufräumen: `fdo_mermaid_old.py`, Root-`MD.cff.schema.yaml` (A1 Befund 2b/8, neu) | fdo-squirrel | S0 | offen |
@@ -321,23 +321,68 @@ Existierte bereits vollständig und funktionsfähig, bevor dieser PRIMER
 eingeführt wurde — siehe A1-Tabelle für die beteiligten Module. Kein
 neuer Code in diesem Schritt, nur Dokumentation des Ist-Zustands.
 
-## S2 — architecture.mermaid aktualisieren (Vorschlag)
+## S2 — architecture.mermaid aktualisieren
 
 **Ziel:** `architecture.mermaid`/`.png` im Repo so aktualisieren, dass sie
 den echten `main.py`-Ablauf zeigen (Schema-Validierung, Mermaid→JPG,
-Bundle-Finalisierung fehlen aktuell, A1 Befund 1).
+Bundle-Finalisierung fehlten, A1 Befund 1).
 
-**Uploads:** Repo-Bundle (A5); Quelldiagramm liegt bereits in
-`fdox-visuals` (`img/fdox-fdo-squirrel-architecture.svg`), muss nur
-übernommen/angepasst werden.
+**Uploads:** Repo-Bundle (A5).
 
-**Substanz (Vorschlag):** Mermaid-Quelle aus `fdox-visuals` S4 als
-Ausgangspunkt nehmen, ggf. an das hier verwendete Rendering (`.png` statt
-`.svg`) anpassen.
+**Substanz:** `fdox-visuals` liefert kein rohes Mermaid als Quelle — S4
+dort zeichnet die Architektur direkt als SVG (Python, kein `mmdc`, siehe
+`fdox-visuals`s eigenes A2-Prinzip "kein externes CLI-Tool"). Übernommen
+wurde daher nicht die SVG-Datei, sondern die dort bereits korrigierte
+Box-/Kantenstruktur aus `py/step_architecture.py` (Zeilen 61–90,
+`SINGLE_ROWS`/`FORK_LEFT`/`FORK_RIGHT`/`INPUT_BOXES`/`OUTPUT_BOXES`),
+1:1 in `fdo-squirrel`s eigenen Mermaid-Dialekt (flowchart LR, dagre
+Layout, Subgraphs `ZIP`/`FDO`/`RDF`) übertragen.
 
-**Abnahme (Vorschlag):** `architecture.mermaid` zeigt alle Schritte aus
-`main.py`s tatsächlicher Aufrufkette (siehe A2); `architecture.png` neu
-gerendert.
+**Abnahme:** `architecture.mermaid` zeigt alle Schritte aus `main.py`s
+tatsächlicher Aufrufkette (siehe A2) — Ingest, Schema-Validierung,
+Crosswalk & Mapping Rules, Role classification, Provenance tracking,
+Overview diagram, Bundle finalisation, alle vier Ausgabedateien;
+`architecture.png` neu gerendert.
+
+### Erledigt 2026-09-08
+
+`architecture.mermaid` neu geschrieben: zusätzlich zu den bisherigen vier
+Boxen (Metadata ingest, Crosswalk & Mapping Rules, Role classification,
+Provenance tracking) jetzt auch Schema validation, Overview diagram
+(Mermaid → JPG) und Bundle finalisation, dazu zwei neue Ausgabeknoten
+(`fdo_overview`, `<slug>-fdo-bundle.zip`). Kantenführung entspricht
+`fdox-visuals`s korrigierter Struktur: `Data/Software/Models` geht direkt
+in `Role classification`, nicht über `Metadata ingest`; `Crosswalk &
+Mapping Rules` wird ausschließlich von `Schema validation` gespeist,
+nicht direkt von `Metadata ingest`; `Role classification` und `Crosswalk`
+laufen als echte Parallelzweige, beide in `fdo-metadata.ttl` und
+`Provenance tracking`.
+
+**Verifiziert:** die Mermaid-Syntax wurde gegen den echten
+`mermaid`-npm-Parser geprüft (`mermaid.parse()`, inkl. YAML-Frontmatter),
+nicht nur von Hand gelesen — Ergebnis `flowchart-v2`, `layout: dagre`
+erkannt, keine Syntaxfehler.
+
+**Nicht geschafft:** `architecture.png` neu rendern. `mmdc` (Mermaid CLI)
+braucht einen echten Browser (headless Chromium); im Sandkasten hier
+gibt es keinen und er lässt sich über die freigegebenen Netzwerk-Domains
+nicht nachinstallieren (Chromium-Download läuft über eine nicht
+freigegebene Domain, `apt`/snap schlägt fehl). Ein Rendering-Versuch
+direkt über `jsdom` (ohne echten Browser) scheitert strukturell:
+`mermaid`s Dagre-Layout braucht `getBBox()` für die Boxgrößen, das
+`jsdom` nicht implementiert (kein echtes Layout/keine Textmetrik) — ein
+Fake-Wert dafür hätte eine geometrisch falsche Grafik erzeugt, das war
+nicht die Mühe wert. `architecture.png` muss lokal neu erzeugt werden,
+wo `mmdc`/Node bereits eingerichtet ist:
+
+```cmd
+mmdc -i architecture.mermaid -o architecture.png -w 2400 -H 1200 --backgroundColor white --scale 3
+```
+
+(Breite/Höhe sind Näherungswerte an das bisherige Seitenverhältnis
+6747×1970 px, weißer Hintergrund wie beim bisherigen `architecture.png`
+bestätigt — `mmdc` passt die tatsächliche Canvas-Größe ohnehin an den
+Diagramminhalt an.)
 
 ## S3 — CITATION.cff-Datenverlust entscheiden (Vorschlag)
 

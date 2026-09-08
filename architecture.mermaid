@@ -10,18 +10,26 @@ flowchart LR
   end
  subgraph FDO["fdo-squirrel"]
         INGEST["Metadata ingest"]
+        VALIDATE["Schema validation"]
         CROSSWALK["Crosswalk & Mapping Rules"]
         ROLES["Role classification <br> ZIP → Distribution"]
         PROV["Provenance tracking"]
+        OVERVIEW["Overview diagram <br> Mermaid → JPG"]
+        BUNDLE["Bundle finalisation"]
   end
  subgraph RDF["Derived Outputs"]
-        TTL["fdo-metadata.ttl\nDCAT + FDO + CIDOC CRM / CRMdig <br> + GeoSPARQL"]
+        TTL["fdo-metadata.ttl <br> DCAT + FDO + CIDOC CRM / CRMdig + GeoSPARQL"]
         REPORT["rdf_modelling_report <br> (JSON / HTML)"]
+        OVERVIEWOUT["fdo_overview <br> Mermaid + JPG"]
+        BUNDLEOUT["&lt;slug&gt;-fdo-bundle.zip <br> self-contained, republishable"]
   end
     MD --> INGEST
     CFF --> INGEST
     DATA --> ROLES
-    INGEST --> CROSSWALK & PROV
+    INGEST --> VALIDATE
+    VALIDATE --> CROSSWALK
     CROSSWALK --> TTL & PROV
     ROLES --> TTL & PROV
-    PROV --> REPORT
+    PROV --> REPORT & OVERVIEW
+    OVERVIEW --> OVERVIEWOUT & BUNDLE
+    BUNDLE --> BUNDLEOUT
