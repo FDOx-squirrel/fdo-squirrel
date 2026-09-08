@@ -72,12 +72,13 @@ maschinenlesbar, `fdo-squirrel-registry` macht *viele* auffindbar.")
 | `fdo/fdo_rdf.py` | Aggregiert alles zu Turtle (1754 Zeilen); größte Einzelfunktion ist `crosswalk_to_rdf_turtle`, nicht `_apply_md_cff_mapping` (Befund 9, korrigiert) |
 | `fdo/classification_rules.yaml` | Datei→`fdo:role`-Heuristik (Befund 7, Pfad korrigiert ggü. Entwurf) |
 | `fdo_mermaid.py` | `fdo-metadata.ttl` + `rdf_modelling_report.html` → `fdo_overview.mermaid` (589 Zeilen, tatsächlich importiert) |
-| `fdo_mermaid_old.py` | Unbenutzte Vorgängerversion (510 Zeilen), nirgends importiert (Befund 8, neu) |
 | `fdo_finalize.py` | `render_mermaid_to_jpg()` (braucht `mmdc`/Node, bricht sanft ab wenn fehlt), `build_finished_bundle()` |
 | `schemas/md_cff/MD.cff-schema.yaml` | Tatsächlich genutztes MD.cff-Schema (JSON Schema draft 2020-12) |
-| `MD.cff.schema.yaml` (Repo-Root) | Veraltetes Duplikat, weicht stark ab, von keinem Code geladen (Befund 2b, neu) |
 | `crosswalks/crosswalk.fdo-metadata.yaml` | Regelbasierte CFF/codemeta/schema.org/Wikidata→RDF-Abbildung (22 `cff:`-Quellfelder, siehe Befund 3) |
-| `crosswalks/metadata-crosswalk.py` | Entwicklungswerkzeug zum Bauen/Pflegen des Crosswalk-Graphen; nicht Teil der Laufzeit-Pipeline (nicht von `main.py` importiert) |
+| `crosswalks/metadata-crosswalk.py` | Entwicklungswerkzeug zum Bauen/Pflegen des Crosswalk-Graphen; nicht Teil der Laufzeit-Pipeline, aber legitim — kein Aufräum-Kandidat (S5) |
+
+*(`fdo_mermaid_old.py` und das Root-`MD.cff.schema.yaml` standen hier bis
+S5 — beide gelöscht, siehe Befund 8/2b unten und S5 in Teil C.)*
 
 **Befunde (geprüft 2026-09-08, dieser Chat, gegen frischen Klon):**
 
@@ -235,7 +236,7 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | `architecture.mermaid` in diesem Repo aktualisieren (S2) | Ja, umgesetzt — Quelle aus `fdox-visuals`s `step_architecture.py`-Struktur übernommen (nicht das SVG selbst, sondern die dort bereits korrigierte Box-/Kantenstruktur) | 2026-09-08 |
 | CITATION.cff-Datenverlust fixen? (S3) | Option (a): `_normalize_citation()` erweitert. Bringt 17 von 22 statt 6 von 22 zum Ziel — die restlichen 5 (`cff-version`, `commit`, `message`, `references`, `type`) haben **keinen** `to_term` im Crosswalk-YAML, das ist eine separate, größere Entscheidung (siehe Notiz unten) | 2026-09-08 |
 | Für die 5 `to_term`-losen Felder auch noch `crosswalk.fdo-metadata.yaml` erweitern? | Noch nicht entschieden — eigene Entscheidung, nicht Teil von S3s Auftrag ("_normalize_citation() erweitern"). Erfordert, für jedes der 5 Felder ein sinnvolles RDF-Prädikat auszuwählen, nicht nur Python-Code | 2026-09-08, offen, neu |
-| `fdo_mermaid_old.py` + Root-`MD.cff.schema.yaml` aufräumen (S5) | Vorschlag: `fdo_mermaid_old.py` löschen (unbenutzt); `MD.cff.schema.yaml` löschen oder explizit als veraltet kennzeichnen — noch nicht entschieden | 2026-09-08, Vorschlag, neu |
+| `fdo_mermaid_old.py` + Root-`MD.cff.schema.yaml` aufräumen (S5) | Beide gelöscht (`git rm`, siehe PATCH-README — ZIPs können keine Löschungen transportieren) | 2026-09-08 |
 | Lokales MD.cff/CITATION.cff für `fdo-3d-packager` (Flos Vorschlag, dort S10) | In `fdo-3d-packager` umgesetzt und laut Parallel-Chat heute committet + gepusht — hier nicht verifiziert (anderes Repo). `fdo-squirrel`s S6 hängt davon ab; im nächsten `fdo-squirrel`-Chat prüfen, ob die Abhängigkeit damit erledigt ist | 2026-09-08, Notiz |
 | Instanz-Diagramme ("MD.cff ausgefüllt", "Files and Roles") hier statt in `fdo-3d-packager` (S8) | Bestätigt aus dem Entwurf übernommen — brauchen `fdo-squirrel`s eigene Sicht auf ein verarbeitetes Paket; `fdo_mermaid.py` ist Präzedenzfall für dieses Muster | 2026-09-08, Vorschlag |
 
@@ -262,7 +263,7 @@ groß sein (3D-Modelle im Beispielpaket).
 | S2 | `architecture.mermaid`/`.png` im Repo aktualisieren (Quelle: `fdox-visuals` S4) | fdo-squirrel | S0 | **erledigt 2026-09-08** (Mermaid-Quelle; `.png`-Regeneration braucht lokales `mmdc`, siehe Teil C) |
 | S3 | CITATION.cff-Datenverlust entscheiden + fixen (Option a) | fdo-squirrel | S0 | **erledigt 2026-09-08** (17 von 22 Feldern; 5 bleiben ohne `to_term`, neuer Offener Punkt in Teil D) |
 | S4 | Determinismus prüfen + fixen (zwei Läufe, `fdo-metadata.ttl` vergleichen) | fdo-squirrel | S0 | **erledigt 2026-09-08** (drei Nichtdeterminismus-Quellen gefunden und gefixt) |
-| S5 | Aufräumen: `fdo_mermaid_old.py`, Root-`MD.cff.schema.yaml` (A1 Befund 2b/8, neu) | fdo-squirrel | S0 | offen |
+| S5 | Aufräumen: `fdo_mermaid_old.py`, Root-`MD.cff.schema.yaml` (A1 Befund 2b/8) | fdo-squirrel | S0 | **erledigt 2026-09-08** (beide gelöscht, `crosswalks/metadata-crosswalk.py` bleibt — ist kein Aufräum-Kandidat, siehe Teil D) |
 | S6 | CIIC 81 real durchlaufen lassen, sobald `fdo-3d-packager` reale `MD.cff`/`CITATION.cff` liefert | fdo-squirrel | `fdo-3d-packager` S10 (laut Parallel-Chat heute erledigt — hier noch zu prüfen) | offen |
 | S7 | Freshford Holy Well (`freshford-st-lachtains-well-low-poly`) ebenso | fdo-squirrel | S6 | offen |
 | S8 | Instanz-Diagramme aus einem echten Lauf: "MD.cff ausgefüllt", "Files and Roles" (Muster: `fdo_mermaid.py`) | fdo-squirrel | S6 (braucht einen echten Lauf zum Testen) | offen |
@@ -536,24 +537,42 @@ zweimal hintereinander) — für CPython ≥3.7 ist Dict-Reihenfolge
 Einfügereihenfolge, insofern nicht erwartungsgemäß ein Risiko, aber
 nicht über mehrere Python-Versionen getestet.
 
-## S5 — Aufräumen (Vorschlag, neu)
+## S5 — Aufräumen
 
 **Ziel:** die beiden in S0 gefundenen verwaisten Dateien klären
 (A1 Befund 2b, 8).
 
 **Uploads:** Repo-Bundle (A5).
 
-**Substanz (Vorschlag):**
-- `fdo_mermaid_old.py` löschen — von nichts importiert, `fdo_mermaid.py`
+**Substanz:**
+- `fdo_mermaid_old.py` gelöscht — von nichts importiert, `fdo_mermaid.py`
   ist der aktive Nachfolger.
-- `MD.cff.schema.yaml` (Root) entweder löschen oder mit einem Kopfkommentar
-  "veraltet, siehe `schemas/md_cff/MD.cff-schema.yaml`" versehen, falls es
-  aus externen Gründen (Verlinkung, Referenz in einer Präsentation) nicht
-  entfernt werden soll.
+- `MD.cff.schema.yaml` (Root) gelöscht — veraltete Vorstufe von
+  `schemas/md_cff/MD.cff-schema.yaml`, von keinem Code geladen.
 
-**Abnahme (Vorschlag):** `grep -r "fdo_mermaid_old" .` und
+**Abnahme:** `grep -r "fdo_mermaid_old" .` und
 `grep -r "MD.cff.schema.yaml" .` (außerhalb `.git/`) liefern kein
-Ergebnis mehr, oder das Root-Duplikat trägt den Veraltet-Hinweis.
+Ergebnis mehr.
+
+### Erledigt 2026-09-08
+
+Beide Dateien gelöscht, nach nochmaliger Fixed-String-Suche (nicht die
+erste, ungenaue Regex-Suche aus S0 — `.` im Dateinamen ist im Regex ein
+Wildcard und hätte auch `MD.cff-schema.yaml` mitgetroffen) gegen den
+gesamten Baum: außer diesem PRIMER selbst referenziert nichts einen der
+beiden Namen.
+
+**`crosswalks/metadata-crosswalk.py` geprüft, nicht gelöscht** — der
+offene Punkt aus Teil D ist damit beantwortet: es ist der
+Entwicklungswerkzeug-Generator, der `crosswalks/crosswalk.fdo-metadata.yaml`
+baut/pflegt (Docstring: "FDO Metadata Crosswalk Builder", eigenständig
+in VS Code lauffähig, keine CLI-Argumente). Dass `main.py` es nicht
+importiert, macht es nicht tot — die Datei, die es erzeugt, wird von der
+Pipeline aktiv gebraucht. Kein Aufräum-Kandidat, bleibt.
+
+**Da ZIPs keine Löschungen transportieren können, sind
+`fdo_mermaid_old.py` und `MD.cff.schema.yaml` als manuelle Schritte im
+PATCH-README aufgeführt** (`git rm`), nicht im ZIP selbst.
 
 ## S6 — CIIC 81 real durchlaufen lassen
 
@@ -645,6 +664,3 @@ inhaltlich vergleichbar — echte Werte statt der alten Beispieldaten).
   `<DOI>_geom`/`<DOI>_temporal`-IRIs in fremdem Namensraum, ORCID statt
   Personen-URN, `dcat:bbox` statt `geo:hasBoundingBox`. Noch keinem
   Schritt zugeordnet.
-- **`crosswalks/metadata-crosswalk.py`** — Entwicklungswerkzeug, das den
-  Crosswalk-Graphen baut/pflegt; nicht geprüft, ob es noch aktiv genutzt
-  wird oder ebenfalls ein Aufräum-Kandidat für S5 ist.
