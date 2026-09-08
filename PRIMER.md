@@ -239,6 +239,8 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | `fdo_mermaid_old.py` + Root-`MD.cff.schema.yaml` aufräumen (S5) | Beide gelöscht (`git rm`, siehe PATCH-README — ZIPs können keine Löschungen transportieren) | 2026-09-08 |
 | Lokales MD.cff/CITATION.cff für `fdo-3d-packager` (Flos Vorschlag, dort S10) | In `fdo-3d-packager` umgesetzt und laut Parallel-Chat heute committet + gepusht — hier nicht verifiziert (anderes Repo). `fdo-squirrel`s S6 hängt davon ab; im nächsten `fdo-squirrel`-Chat prüfen, ob die Abhängigkeit damit erledigt ist | 2026-09-08, Notiz |
 | Instanz-Diagramme ("MD.cff ausgefüllt", "Files and Roles") hier statt in `fdo-3d-packager` (S8) | Bestätigt aus dem Entwurf übernommen — brauchen `fdo-squirrel`s eigene Sicht auf ein verarbeitetes Paket; `fdo_mermaid.py` ist Präzedenzfall für dieses Muster | 2026-09-08, Vorschlag |
+| Wann ein Release machen? (S10) | Erst wenn S6, S7 und S8 durch sind, nicht vorher — Flos Entscheidung | 2026-09-08 |
+| Python-Mindestversion (README sagte 3.10, `pyproject.toml` sagt 3.9, Code braucht nachweislich nur 3.9) | README war der Tippfehler, auf 3.9 korrigiert (S9) — Flos Entscheidung | 2026-09-08 |
 
 ## A5. Was in welchem Chat hochgeladen wird
 
@@ -267,6 +269,8 @@ groß sein (3D-Modelle im Beispielpaket).
 | S6 | CIIC 81 real durchlaufen lassen, sobald `fdo-3d-packager` reale `MD.cff`/`CITATION.cff` liefert | fdo-squirrel | `fdo-3d-packager` S10 (laut Parallel-Chat heute erledigt — hier noch zu prüfen) | offen |
 | S7 | Freshford Holy Well (`freshford-st-lachtains-well-low-poly`) ebenso | fdo-squirrel | S6 | offen |
 | S8 | Instanz-Diagramme aus einem echten Lauf: "MD.cff ausgefüllt", "Files and Roles" (Muster: `fdo_mermaid.py`) | fdo-squirrel | S6 (braucht einen echten Lauf zum Testen) | offen |
+| S9 | README.md auffrischen (Python-Version, MD.cff-Feldliste, Status-Abschnitt) | fdo-squirrel | — | **erledigt 2026-09-08** |
+| S10 | Release: Versionsbump + Git-Tag | fdo-squirrel | S6, S7, S8 (A4: Flos Entscheidung, erst wenn alle drei durch sind) | offen |
 
 S2, S3, S4 und S5 sind voneinander unabhängig und können in beliebiger
 Reihenfolge angegangen werden. S6, S7, S8 hängen an einem echten Lauf mit
@@ -631,6 +635,38 @@ CIIC-81- oder Freshford-Lauf (S6/S7), nicht neu generieren müssen.
 **Abnahme (Vorschlag):** beide Diagramme für den echten CIIC-81-Lauf
 erzeugt, Sichtprüfung gegen die alten Folien 27/28 (nicht identisch, aber
 inhaltlich vergleichbar — echte Werte statt der alten Beispieldaten).
+
+## S9 — README.md auffrischen
+
+**Ziel:** die drei durch S1–S5 entstandenen Diskrepanzen zwischen
+README und Repo-Realität beheben.
+
+**Uploads:** Repo-Bundle (A5).
+
+**Substanz:**
+- Python-Mindestversion: README sagte 3.10, `pyproject.toml` sagt 3.9,
+  Code enthält keine 3.10-typische Syntax (kein `match`, kein
+  ungeschütztes `X | Y` als Typannotation) — README auf 3.9 korrigiert.
+- `MD.cff`-Feldliste unter "Input requirements" vervollständigt:
+  `creators`/`contributors`/`identifiers`/`related_resources`/
+  `heritage_object`/`technique`/`funding` fehlten ganz, obwohl im
+  echten Schema vorhanden.
+- Status-Abschnitt um die jetzt (S4) tatsächlich geprüfte Eigenschaft
+  "deterministic, byte-identical output across repeated runs" ergänzt —
+  vorher stand da nur "deterministic identifiers", was etwas anderes ist
+  und nichts über den Rest der Ausgabe aussagt.
+
+**Abnahme:** die drei genannten Diskrepanzen sind behoben, sonst nichts
+an der README verändert.
+
+### Erledigt 2026-09-08
+
+Umgesetzt wie oben beschrieben. **`architecture.png` bleibt bewusst
+unverändert** — das Bild selbst ist weiterhin die alte 4-Boxen-Fassung
+(bestätigt: Repo-Stand vor diesem Patch zeigt noch dieselben Maße wie
+vor S2), weil die lokale `mmdc`-Regeneration aus S2 noch aussteht. Kein
+neuer Fund, nur zur Erinnerung — sobald das Bild lokal neu gerendert
+ist, passt es automatisch zum bereits korrigierten `architecture.mermaid`.
 
 ---
 

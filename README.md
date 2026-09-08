@@ -44,9 +44,12 @@ The input **must be a ZIP file** containing at least:
 - Valid according to the **project-specific MD.cff schema**
 - Used for:
   - FDOx type (`fdo:SoftwareFDO`, `fdo:AnalysisFDO`, `fdo:3DDataFDO`, `fdo:RegistryFDO`)
-  - title, description, version
-  - licence, publisher
-  - spatial and temporal metadata
+  - title, description, version, release/modification dates
+  - licence, publisher(s), creators, contributors
+  - keywords, identifiers, related resources
+  - spatial and temporal extent
+  - heritage-object and technique/acquisition metadata (for 3D/heritage packages)
+  - funding (optional)
 
 ### 3. Arbitrary package content
 - data, software, models, documentation, etc.
@@ -146,7 +149,7 @@ render is the only step that's skipped, not the whole run.
 
 ## Requirements
 
-- Python ≥ 3.10
+- Python ≥ 3.9
 - Install dependencies:
   ```bash
   pip install -r requirements.txt
@@ -161,6 +164,7 @@ This is a **v0.1 reference implementation**.
 - ✔ stable RDF output
 - ✔ valid Turtle
 - ✔ deterministic identifiers
+- ✔ deterministic, byte-identical output across repeated runs against the same package (RDF, both provenance reports, the overview diagram, and the finished bundle ZIP)
 - ✔ explicit provenance
 - ✔ suitable for documentation and scientific publication
 
