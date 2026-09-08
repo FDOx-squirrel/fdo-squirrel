@@ -240,6 +240,8 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | Lokales MD.cff/CITATION.cff für `fdo-3d-packager` (Flos Vorschlag, dort S10) | In `fdo-3d-packager` umgesetzt und laut Parallel-Chat heute committet + gepusht — hier nicht verifiziert (anderes Repo). `fdo-squirrel`s S6 hängt davon ab; im nächsten `fdo-squirrel`-Chat prüfen, ob die Abhängigkeit damit erledigt ist | 2026-09-08, Notiz |
 | Instanz-Diagramme ("MD.cff ausgefüllt", "Files and Roles") hier statt in `fdo-3d-packager` (S8) | Bestätigt aus dem Entwurf übernommen — brauchen `fdo-squirrel`s eigene Sicht auf ein verarbeitetes Paket; `fdo_mermaid.py` ist Präzedenzfall für dieses Muster | 2026-09-08, Vorschlag |
 | Wann ein Release machen? (S10) | Erst wenn S6, S7 und S8 durch sind, nicht vorher — Flos Entscheidung | 2026-09-08 |
+| Versions-Metadaten stimmten nicht mit der echten Release-Historie überein (S11) | `git tag` zeigt fünf echte Releases bis `v0.3.1` (23.02.2026), aus Arbeit vor diesem PRIMER — `CITATION.cff`/`pyproject.toml`/`README.md` standen aber noch auf `v0.1`/`0.1.0`, bei keinem Tag mitgezogen. Auf `v0.3.1` synchronisiert. Unabhängig von S10 — das war kein neuer Release, nur ein Sync-Fehler bei bereits existierenden | 2026-09-08 |
+| Architektur-Bild-Referenz: eigenes `architecture.png` oder Cross-Repo-Link auf `fdox-visuals`? (S11) | Cross-Repo-Link (`raw.githubusercontent.com/.../fdox-visuals/...`) — Flos Entscheidung, bewusste Ausnahme von A3 "Reuse heißt kopieren, nicht referenzieren". Begründung: Bild dort bereits korrekt und aktuell, eigenes `architecture.png` wartet weiterhin auf lokales `mmdc` (S2). Lokale `architecture.mermaid`/`architecture.png` bleiben im Repo, werden nur von der README nicht mehr eingebunden | 2026-09-08 |
 | Python-Mindestversion (README sagte 3.10, `pyproject.toml` sagt 3.9, Code braucht nachweislich nur 3.9) | README war der Tippfehler, auf 3.9 korrigiert (S9) — Flos Entscheidung | 2026-09-08 |
 
 ## A5. Was in welchem Chat hochgeladen wird
@@ -271,6 +273,7 @@ groß sein (3D-Modelle im Beispielpaket).
 | S8 | Instanz-Diagramme aus einem echten Lauf: "MD.cff ausgefüllt", "Files and Roles" (Muster: `fdo_mermaid.py`) | fdo-squirrel | S6 (braucht einen echten Lauf zum Testen) | offen |
 | S9 | README.md auffrischen (Python-Version, MD.cff-Feldliste, Status-Abschnitt) | fdo-squirrel | — | **erledigt 2026-09-08** |
 | S10 | Release: Versionsbump + Git-Tag | fdo-squirrel | S6, S7, S8 (A4: Flos Entscheidung, erst wenn alle drei durch sind) | offen |
+| S11 | Versions-Metadaten mit tatsächlicher Release-Historie synchronisieren + Architektur-Bild-Referenz | fdo-squirrel | — | **erledigt 2026-09-08** |
 
 S2, S3, S4 und S5 sind voneinander unabhängig und können in beliebiger
 Reihenfolge angegangen werden. S6, S7, S8 hängen an einem echten Lauf mit
@@ -668,10 +671,54 @@ vor S2), weil die lokale `mmdc`-Regeneration aus S2 noch aussteht. Kein
 neuer Fund, nur zur Erinnerung — sobald das Bild lokal neu gerendert
 ist, passt es automatisch zum bereits korrigierten `architecture.mermaid`.
 
+## S11 — Versions-Metadaten synchronisieren + Architektur-Bild-Referenz
+
+**Ziel:** zwei von Flo entdeckte Diskrepanzen beheben, die S9 nicht
+gefangen hatte.
+
+**Uploads:** Repo-Bundle (A5).
+
+**Substanz:**
+- **Versions-Sync:** `git tag` zeigt fünf echte, bereits veröffentlichte
+  Releases (`v0.1` 28.01., `v0.1.1` 28.01., `v0.2` 22.02., `v0.3` 22.02.,
+  `v0.3.1` 23.02. — alle vor diesem PRIMER, aus früherer Arbeit).
+  `CITATION.cff` (`version`, `date-released`), `pyproject.toml`
+  (`version`) und `README.md` (Kopf + Status-Abschnitt) auf `v0.3.1` /
+  `0.3.1` / `2026-02-23` nachgezogen.
+- **Architektur-Bild:** README verlinkt jetzt per Raw-URL auf
+  `fdox-visuals`s bereits korrigiertes Bild
+  (`img/fdox-fdo-squirrel-architecture.png`) statt auf das eigene,
+  weiterhin veraltete `architecture.png`. Bewusste Ausnahme von A3
+  (siehe A4) — Flos Entscheidung, Cross-Repo-Link statt Warten auf
+  lokales `mmdc`.
+
+**Abnahme:** alle drei Versionsangaben stimmen mit dem `v0.3.1`-Tag
+überein; das README-Bild zeigt die korrigierte 7-Schritte-Architektur.
+
+### Erledigt 2026-09-08
+
+Umgesetzt wie oben. `architecture.mermaid` und das lokale (weiterhin
+veraltete) `architecture.png` bleiben unangetastet im Repo — nur die
+README bindet sie nicht mehr ein. Sollte `fdo-squirrel` die
+Cross-Repo-Abhängigkeit später wieder loswerden wollen (z. B. sobald
+`mmdc` lokal gelaufen ist), ist das ein Ein-Zeilen-Rücktausch in
+`README.md`, nichts Strukturelles.
+
+**Nicht geklärt:** ob `CITATION.cff`s `repository-code`
+(`https://github.com/Research-Squirrel-Engineers/fdo-squirrel/`) noch
+stimmt — die Organisation heißt inzwischen `FDOx-squirrel`, nicht mehr
+`Research-Squirrel-Engineers`. Beiläufig aufgefallen bei diesem Schritt,
+nicht Teil des Auftrags, nicht angefasst — neuer Punkt in Teil D.
+
 ---
 
 # Teil D — Offene Punkte
 
+- **`CITATION.cff`s `repository-code` zeigt auf die alte Organisation**
+  (`github.com/Research-Squirrel-Engineers/fdo-squirrel`, nicht
+  `github.com/FDOx-squirrel/fdo-squirrel`) — beiläufig in S11
+  aufgefallen, nicht Teil des Auftrags, nicht angefasst. Nicht bewertet,
+  ob das ein alter Redirect ist oder ein echter Fehler.
 - **`example_fdo/MD.cff` ist selbst nicht lauffähig** (neu, gefunden
   während S3): validiert nicht gegen `schemas/md_cff/MD.cff-schema.yaml`
   (`description`/`publishers` fehlen, `keywords`/`license` haben falsche
