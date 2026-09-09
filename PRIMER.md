@@ -76,7 +76,7 @@ maschinenlesbar, `fdo-squirrel-registry` macht *viele* auffindbar.")
 | `fdo_manifest.py` | Neu (S14): schreibt `FDOx.yaml`, ein kurzes Build-Manifest (Generator-Version, strukturelle Vermutung über das erzeugende Upstream-Tool) |
 | `fdo_visuals_utils.py` | Neu (S8): gemeinsame Stilkonstanten für die vier neuen Diagramme — Palette, Fira Sans, `resvg-py`-Rendering. An `fdox-visuals`s `visuals_utils.py` angelehnt (kopiert, nicht referenziert), nicht neu erfunden |
 | `fdo_files_roles_common.py` / `fdo_files_roles_graph.py` | "Files and Roles" — welche Datei welche `fdo:role` bekommen hat. `_common` (S15, vormals `_diagram.py`) trägt nur noch die geteilten Extraktions-/Gruppierungsfunktionen; das eigenständige Faktenblatt aus S8 wurde in S15 wieder entfernt (redundant zum Graph) |
-| `fdo_ttl_snippet.py` | Neu (S15): kurzes, dunkles "Code-Card"-JPG mit einer kuratierten Auswahl echter Turtle-Zeilen, für Folien |
+| `fdo_ttl_snippet.py` | Drei dunkle "Code-Card"-JPGs für Folien (S15, in S16 zu drei Karten ausgebaut): Metadata (fuller), Distributions (Beispiel-Blöcke), Linked Open Data (externe IRIs, nach Domain priorisiert) |
 | `fdo_md_cff_diagram.py` / `fdo_md_cff_graph.py` | Neu (S8): "MD.cff ausgefüllt" als Faktenblatt bzw. Knoten-Graph — das eingelesene `MD.cff` mit echten Werten |
 | `fonts/` | Neu (S8): vendorte Fira-Sans-TTFs (Regular + Bold), von `fdox-visuals` kopiert (A3: Reuse heißt kopieren) — jetzt ein eigenes, leeres Python-Package (`__init__.py`) wegen `package-data`, siehe S8 |
 | `schemas/md_cff/MD.cff-schema.yaml` | Tatsächlich genutztes MD.cff-Schema (JSON Schema draft 2020-12) |
@@ -257,6 +257,7 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | S8-Stil: Faktenblatt oder Knoten-Graph? | Beides — vier Diagramme statt zwei (Faktenblatt + Graph, für "Files and Roles" und "MD.cff ausgefüllt" je einmal) — Flos Entscheidung, nachdem er seine ursprünglichen Referenzbilder (Knoten-Graphen) gezeigt hatte | 2026-09-09 |
 | "Files and Roles"-Faktenblatt behalten? (S15) | Nein, entfernt — Flo verglich beide Stile nebeneinander mit echten Daten: der Graph zeigt dieselbe Gruppierung, aber mit echten Verbindungen, das Faktenblatt bot daneben keinen Mehrwert. Bei "MD.cff" bleiben beide, da das Faktenblatt dort deutlich mehr Text kompakter unterbringt als der Graph könnte | 2026-09-09 |
 | TTL-Snippet-als-JPG für Präsentationen (S15) | Automatisch pro Lauf, wie die anderen S8-Diagramme (nicht als separates, manuell aufgerufenes Werkzeug) — Flos Entscheidung | 2026-09-09 |
+| TTL-Snippet-Inhalt nach Flos Test (S16) | Zu wenig Inhalt, zu niedrige Auflösung — Flo wollte "mehr Metadaten" + "Distributions" + hatte offene Frage nach einer dritten Idee. Umgesetzt: drei Karten (Metadata/Distributions/Linked Open Data), 2,5-fache Render-Auflösung | 2026-09-09 |
 
 ## A5. Was in welchem Chat hochgeladen wird
 
@@ -285,7 +286,8 @@ groß sein (3D-Modelle im Beispielpaket).
 | S6 | CIIC 81 real durchlaufen lassen | fdo-squirrel | `fdo-3d-packager` S10 | **erledigt 2026-09-09** |
 | S7 | Freshford Holy Well (`freshford-st-lachtains-well-low-poly`) ebenso | fdo-squirrel | S6 | **erledigt 2026-09-09** |
 | S8 | Instanz-Diagramme aus einem echten Lauf: "MD.cff ausgefüllt", "Files and Roles" — je zwei Stile (Faktenblatt + Knoten-Graph) | fdo-squirrel | S6 | **erledigt 2026-09-09** (S15: "Files and Roles"-Faktenblatt wieder entfernt) |
-| S15 | Nachtrag zu S8: "Files and Roles"-Faktenblatt entfernen (redundant zum Graph) + neues TTL-Snippet-JPG für Präsentationen | fdo-squirrel | S8 | **erledigt 2026-09-09** |
+| S15 | Nachtrag zu S8: "Files and Roles"-Faktenblatt entfernen (redundant zum Graph) + neues TTL-Snippet-JPG für Präsentationen | fdo-squirrel | S8 | **erledigt 2026-09-09** (S16: Snippet zu drei Karten ausgebaut) |
+| S16 | Nachtrag zu S15: TTL-Snippet höher auflösen, drei gezielte Karten (Metadata/Distributions/Linked Open Data) statt einer generischen | fdo-squirrel | S15 | **erledigt 2026-09-09** |
 | S9 | README.md auffrischen (Python-Version, MD.cff-Feldliste, Status-Abschnitt) | fdo-squirrel | — | **erledigt 2026-09-08** |
 | S10 | Release: Versionsbump + Git-Tag | fdo-squirrel | — (A4: Flos Entscheidung — S6/S7/S8 sind jetzt alle durch) | offen |
 | S11 | Versions-Metadaten mit tatsächlicher Release-Historie synchronisieren + Architektur-Bild-Referenz | fdo-squirrel | — | **erledigt 2026-09-08** |
@@ -843,6 +845,86 @@ nächsten echten Leerzeile lesen.
 `fdo_files_roles_common` + `fdo_ttl_snippet` rein. **README.md:**
 Output-Abschnitt auf die jetzt drei (statt zwei) S8-Diagrammthemen
 aktualisiert.
+
+## S16 — Nachtrag zu S15: TTL-Snippet ausgebaut
+
+**Ziel:** zwei Rückmeldungen von Flo nach dem ersten echten Test von
+S15s TTL-Snippet (gegen `C:\tmp\fdo\CO074-148----.zip`, ein rohes,
+nicht von `fdo-3d-packager` gebautes Testpaket): die Auflösung war zu
+niedrig für eine Folie, und der Inhalt zu wenig — er wollte mehr
+Metadaten und die Distributions sehen, dazu die offene Frage nach einer
+dritten sinnvollen Karte.
+
+**Uploads:** Repo-Bundle (A5); zur Verifikation dieselben zwei echten
+Pakete wie zuvor.
+
+**Substanz:**
+1. **Auflösung:** `RENDER_SCALE = 2.5` — `resvg-py` bekommt das 2,5-fache
+   der SVG-eigenen Breite/Höhe als Zielgröße, verlustfrei, da Vektor-
+   Inhalt (kein Raster-Upscaling).
+2. **Metadata-Karte, fuller:** von einer auf sieben Prädikate
+   gedeckelten Wunschliste auf eine Ausschlussliste umgestellt (nur
+   `dcat:distribution`, `dct:provenance`, `prov:wasGeneratedBy` raus —
+   der Rest des Kern-Blocks bleibt, gedeckelt bei 20 Zeilen statt 7).
+3. **Neue Distributions-Karte:** zwei bis drei echte
+   `dcat:Distribution`-Blöcke vollständig (Pfad/mediaType/byteSize/
+   role/sha256), je einer pro Rolle wo möglich (`metadata`/`model`/
+   `documentation`/`data`), damit die Form eines Distribution-Eintrags
+   sichtbar wird, nicht nur sein Name.
+4. **Neue Links-Karte** (Flos offene Frage "c)"): `rdfs:label`/
+   `owl:sameAs`-Zeilen, deren Subjekt (oder bei `owl:sameAs` auch das
+   Objekt) eine echte externe IRI ist — Wikidata, OpenStreetMap,
+   ChronOntology, ORCID, SPDX — nicht eine von `fdo-squirrel`s eigenen
+   `urn:fdo-squirrel:`-Knoten. Die "das FDO reiht sich in einen
+   föderierten Wissensgraphen ein"-Geschichte in einer Karte.
+
+**Abnahme:** drei Karten, deutlich schärfer als vorher, Metadata-Karte
+zeigt spürbar mehr als 7 Zeilen, Distributions-Karte zeigt echte
+Blockstruktur, Links-Karte zeigt Wikidata/OSM/ChronOntology zuerst.
+
+### Erledigt 2026-09-09
+
+Wie oben umgesetzt. `write_ttl_snippet_jpg()` (eine Datei) ersetzt durch
+`write_ttl_snippet_cards()` (schreibt `fdo_ttl_snippet_metadata.svg/.jpg`,
+`_distributions.svg/.jpg`, `_links.svg/.jpg` — eine Karte wird
+übersprungen, nicht leer geschrieben, wenn nichts zu zeigen ist, z. B.
+keine externen Links gefunden). `main.py` entsprechend auf eine
+dynamische Dateiliste umgestellt statt zweier fixer Pfade.
+`FDO_SQUIRREL_OWN_FILES` in `fdo_files_roles_common.py` auf die drei
+neuen Kartennamen aktualisiert; dabei auch `fdo_overview.png` ergänzt
+(eine ältere Namenskonvention, in Flos rohem Testpaket noch vorhanden,
+war vorher nicht in der Liste und wäre als Paketinhalt aufgetaucht).
+
+**Zwei echte Content-Bugs beim ersten Rendern der neuen Karten gefunden
+und gefixt, nicht nur bei Flos Test:**
+1. Die Metadata-Karte zeigte eine zweite Zeile, die aussah wie ein
+   Prädikat (`crmdig:D1_Digital_Object, crm:E73_Information_Object,
+   fdo:3DDataFDO`), tatsächlich aber die Fortsetzung der
+   `a dcat:Dataset, <Typen> ;`-Deklaration war, die vor dem
+   Extraktions-Ankerpunkt beginnt. Fix: diese erste Zeile explizit
+   verwerfen, nicht als Prädikat-Zeile behandeln.
+2. Die erste Links-Karten-Version sortierte nach Dateireihenfolge —
+   dadurch standen selbstreferenzielle Zeilen (Sketchfab-Quelle,
+   Zenodo-DOI-Eigenlabel) oben, die eigentlich interessanten
+   Wikidata-Labels fehlten komplett (durch den 7-Zeilen-Deckel
+   verdrängt). Fix: `_LINK_DOMAIN_PRIORITY`-Liste, sortiert zuerst nach
+   bekannten LOD-Domains (Wikidata → OSM → ChronOntology → ORCID → ROR
+   → SPDX), Rang aus Subjekt **und** Objekt (wichtig für `owl:sameAs`,
+   wo die Zieldomain die eigentlich interessante ist, nicht das eigene
+   `_temporal`-Subjekt).
+
+**Verifiziert, gegen beide echten Pakete (CIIC 81, Freshford):**
+- Alle drei Karten für beide Pakete erzeugt, visuell geprüft (siehe die
+  zwei Fixes oben).
+- Links-Karte zeigt nach dem Fix für CIIC 81 an erster Stelle
+  `wikidata.org/entity/Q2016147 rdfs:label "Inscribed Ogham stone"` und
+  `Q22731 "Stone"`, dann OSM, dann den ChronOntology-`owl:sameAs`-Link —
+  genau die Reihenfolge, die die Domain-Priorität vorgibt.
+- Determinismus (S4) hält für alle drei Kartenpaare **und**
+  `fdo-metadata.ttl`: zwei Läufe, alles bytegleich.
+- Freshford (weniger Daten, kein `dct:spatial`/`dct:type`) erzeugt
+  trotzdem alle drei Karten ohne Fehler — Metadata/Distributions/Links
+  passen sich an, was tatsächlich vorhanden ist.
 
 ## S9 — README.md auffrischen
 

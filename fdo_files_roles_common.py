@@ -70,14 +70,19 @@ FDO_SQUIRREL_OWN_FILES = {
     "fdox.yaml",
     "fdo_overview.mermaid",
     "fdo_overview.jpg",
+    "fdo_overview.png",  # older naming convention, found in Flo's local raw-fdo test zip
     "fdo_files_roles_graph.svg",
     "fdo_files_roles_graph.png",
     "fdo_md_cff.svg",
     "fdo_md_cff.png",
     "fdo_md_cff_graph.svg",
     "fdo_md_cff_graph.png",
-    "fdo_ttl_snippet.jpg",
-    "fdo_ttl_snippet.svg",
+    "fdo_ttl_snippet_metadata.svg",
+    "fdo_ttl_snippet_metadata.jpg",
+    "fdo_ttl_snippet_distributions.svg",
+    "fdo_ttl_snippet_distributions.jpg",
+    "fdo_ttl_snippet_links.svg",
+    "fdo_ttl_snippet_links.jpg",
 }
 
 

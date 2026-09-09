@@ -113,13 +113,23 @@ Running the pipeline produces, in `output/`:
   group (agents, classification, space & time, heritage object &
   technique).
 
-- **`fdo_ttl_snippet.svg`+`.jpg`** *(optional JPG)*  
-  A small, dark "code card" for dropping straight into a slide: a
-  curated handful of the most presentation-relevant triples from
-  `fdo-metadata.ttl`'s own core dataset block (title, description,
-  creator, publisher, license, type, spatial - whichever of those a
-  given FDO actually has), syntax-coloured. Not the whole file, and not
-  configurable per run - a fixed, deterministic selection.
+- **`fdo_ttl_snippet_metadata.svg`+`.jpg`**, **`fdo_ttl_snippet_distributions.svg`+`.jpg`** and **`fdo_ttl_snippet_links.svg`+`.jpg`** *(optional JPG)*  
+  Three small, dark "code cards" for dropping straight into a slide,
+  each showing a real excerpt of `fdo-metadata.ttl` rather than the
+  whole file, syntax-coloured, rendered at 2.5x for a crisp result on a
+  slide:
+  - **metadata** — the core dataset block, everything except the two
+    lines that are unreadable on a slide anyway (the full distribution
+    id list, a JSON-in-a-literal blob).
+  - **distributions** — two or three real `dcat:Distribution` blocks in
+    full, one per role where possible, so the shape of an entry is
+    visible, not just its name.
+  - **links** — `rdfs:label`/`owl:sameAs` lines whose subject (or, for
+    `owl:sameAs`, target) is a genuine external IRI - Wikidata,
+    OpenStreetMap, ChronOntology, ORCID, SPDX - ranked by how
+    well-known the linked-open-data hub is, not by file order. A card
+    is skipped, not written empty, if a given FDO has nothing to show
+    for it (e.g. no external links at all).
 
   All diagram PNGs/JPGs need the optional `resvg-py` extra
   (`pip install fdo-squirrel[diagrams]`); without it, the SVGs are still

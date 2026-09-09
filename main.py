@@ -17,7 +17,7 @@ from fdo import (
 )
 from fdo_manifest import write_fdox_yaml
 from fdo_files_roles_graph import write_files_roles_graph
-from fdo_ttl_snippet import write_ttl_snippet_jpg
+from fdo_ttl_snippet import write_ttl_snippet_cards
 from fdo_md_cff_diagram import write_md_cff_diagram
 from fdo_md_cff_graph import write_md_cff_graph
 from fdo_mermaid import FDOMermaidGenerator
@@ -449,13 +449,13 @@ def main():
     except Exception as e:
         print(f"⚠ Files-and-roles graph skipped: {e}")
 
-    ttl_snippet_svg_path = output_dir / "fdo_ttl_snippet.svg"
-    ttl_snippet_jpg_path = output_dir / "fdo_ttl_snippet.jpg"
+    ttl_snippet_files = []
     try:
-        write_ttl_snippet_jpg(output_path, cw.title, ttl_snippet_svg_path, ttl_snippet_jpg_path)
-        print(f"✔ TTL snippet card written to {ttl_snippet_jpg_path}")
+        ttl_snippet_files = write_ttl_snippet_cards(output_path, cw.title, output_dir)
+        jpgs = [p.name for p in ttl_snippet_files if p.suffix == ".jpg"]
+        print(f"✔ TTL snippet cards written: {', '.join(jpgs) if jpgs else '(SVG only, resvg-py missing)'}")
     except Exception as e:
-        print(f"⚠ TTL snippet card skipped: {e}")
+        print(f"⚠ TTL snippet cards skipped: {e}")
 
     md_cff_svg_path = output_dir / "fdo_md_cff.svg"
     try:
@@ -541,8 +541,6 @@ def main():
             fdox_yaml_path,
             files_roles_graph_svg_path,
             files_roles_graph_svg_path.with_suffix(".png"),
-            ttl_snippet_svg_path,
-            ttl_snippet_jpg_path,
             md_cff_svg_path,
             md_cff_svg_path.with_suffix(".png"),
             md_cff_graph_svg_path,
@@ -551,7 +549,7 @@ def main():
             jpg_path,
         )
         if p.exists()
-    ]
+    ] + [p for p in ttl_snippet_files if p.exists()]
     extra_ttl = build_generated_distributions_ttl(
         f"<{cw.id}>", cw.fdo_type, [(p, None) for p in generated_files]
     )
