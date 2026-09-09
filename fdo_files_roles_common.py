@@ -78,10 +78,13 @@ FDO_SQUIRREL_OWN_FILES = {
     "fdo_md_cff_graph.svg",
     "fdo_md_cff_graph.png",
     "fdo_ttl_snippet_metadata.svg",
+    "fdo_ttl_snippet_metadata.png",
     "fdo_ttl_snippet_metadata.jpg",
     "fdo_ttl_snippet_distributions.svg",
+    "fdo_ttl_snippet_distributions.png",
     "fdo_ttl_snippet_distributions.jpg",
     "fdo_ttl_snippet_links.svg",
+    "fdo_ttl_snippet_links.png",
     "fdo_ttl_snippet_links.jpg",
 }
 

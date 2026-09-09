@@ -36,10 +36,14 @@ def render_mermaid_to_jpg(
     scale: int = 3,
     timeout: int = 120,
 ) -> Optional[Path]:
-    """Render `mermaid_path` to a high-resolution JPG at `jpg_path`.
+    """Render `mermaid_path` to a high-resolution JPG at `jpg_path`, and
+    a same-resolution PNG alongside it (`jpg_path.with_suffix(".png")`) -
+    mmdc renders PNG first regardless, this used to just delete that
+    intermediate file instead of keeping it (Flo wanted PNG output
+    consistent with the S8 diagrams, S17 nachtrag, PRIMER.md).
 
-    Returns the output path on success, None if rendering was skipped or
-    failed (a warning is printed either way - never raises).
+    Returns the JPG's output path on success, None if rendering was
+    skipped or failed (a warning is printed either way - never raises).
     """
     if not mermaid_path.exists():
         return None
@@ -95,9 +99,11 @@ def render_mermaid_to_jpg(
 
     try:
         subprocess.run(cmd, check=True, capture_output=True, timeout=timeout)
+        png_path = jpg_path.with_suffix(".png")
+        shutil.copyfile(tmp_png, png_path)
         with Image.open(tmp_png) as im:
             im.convert("RGB").save(jpg_path, "JPEG", quality=92, optimize=True)
-        print(f"✔ Mermaid diagram rendered as high-res JPG: {jpg_path}")
+        print(f"✔ Mermaid diagram rendered as high-res JPG+PNG: {jpg_path}")
         return jpg_path
     except subprocess.CalledProcessError as e:
         stderr = (e.stderr or b"").decode("utf-8", errors="replace").strip()

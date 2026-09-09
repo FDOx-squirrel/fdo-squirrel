@@ -258,6 +258,7 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | "Files and Roles"-Faktenblatt behalten? (S15) | Nein, entfernt — Flo verglich beide Stile nebeneinander mit echten Daten: der Graph zeigt dieselbe Gruppierung, aber mit echten Verbindungen, das Faktenblatt bot daneben keinen Mehrwert. Bei "MD.cff" bleiben beide, da das Faktenblatt dort deutlich mehr Text kompakter unterbringt als der Graph könnte | 2026-09-09 |
 | TTL-Snippet-als-JPG für Präsentationen (S15) | Automatisch pro Lauf, wie die anderen S8-Diagramme (nicht als separates, manuell aufgerufenes Werkzeug) — Flos Entscheidung | 2026-09-09 |
 | TTL-Snippet-Inhalt nach Flos Test (S16) | Zu wenig Inhalt, zu niedrige Auflösung — Flo wollte "mehr Metadaten" + "Distributions" + hatte offene Frage nach einer dritten Idee. Umgesetzt: drei Karten (Metadata/Distributions/Linked Open Data), 2,5-fache Render-Auflösung | 2026-09-09 |
+| PNG statt/zusätzlich zu JPG für die Snippet-Karten + `fdo_overview` (S17) | Flo fand die abgerundeten Ecken im JPG kaputt (schwarze Keile statt transparent) und wollte PNG für Einheitlichkeit mit den anderen S8-Diagrammen — dazu gleich `fdo_overview.png` neben `.jpg`. Beides umgesetzt, PNG zusätzlich zu JPG (nicht ersetzend) | 2026-09-09 |
 
 ## A5. Was in welchem Chat hochgeladen wird
 
@@ -287,7 +288,8 @@ groß sein (3D-Modelle im Beispielpaket).
 | S7 | Freshford Holy Well (`freshford-st-lachtains-well-low-poly`) ebenso | fdo-squirrel | S6 | **erledigt 2026-09-09** |
 | S8 | Instanz-Diagramme aus einem echten Lauf: "MD.cff ausgefüllt", "Files and Roles" — je zwei Stile (Faktenblatt + Knoten-Graph) | fdo-squirrel | S6 | **erledigt 2026-09-09** (S15: "Files and Roles"-Faktenblatt wieder entfernt) |
 | S15 | Nachtrag zu S8: "Files and Roles"-Faktenblatt entfernen (redundant zum Graph) + neues TTL-Snippet-JPG für Präsentationen | fdo-squirrel | S8 | **erledigt 2026-09-09** (S16: Snippet zu drei Karten ausgebaut) |
-| S16 | Nachtrag zu S15: TTL-Snippet höher auflösen, drei gezielte Karten (Metadata/Distributions/Linked Open Data) statt einer generischen | fdo-squirrel | S15 | **erledigt 2026-09-09** |
+| S16 | Nachtrag zu S15: TTL-Snippet höher auflösen, drei gezielte Karten (Metadata/Distributions/Linked Open Data) statt einer generischen | fdo-squirrel | S15 | **erledigt 2026-09-09** (S17: PNG-Bug gefixt) |
+| S17 | Nachtrag zu S16: transparentes PNG für die drei TTL-Snippet-Karten (JPG-Alpha-Bug gefixt), `fdo_overview.png` zusätzlich zu `.jpg` | fdo-squirrel | S16 | **erledigt 2026-09-09** |
 | S9 | README.md auffrischen (Python-Version, MD.cff-Feldliste, Status-Abschnitt) | fdo-squirrel | — | **erledigt 2026-09-08** |
 | S10 | Release: Versionsbump + Git-Tag | fdo-squirrel | — (A4: Flos Entscheidung — S6/S7/S8 sind jetzt alle durch) | offen |
 | S11 | Versions-Metadaten mit tatsächlicher Release-Historie synchronisieren + Architektur-Bild-Referenz | fdo-squirrel | — | **erledigt 2026-09-08** |
@@ -925,6 +927,67 @@ und gefixt, nicht nur bei Flos Test:**
 - Freshford (weniger Daten, kein `dct:spatial`/`dct:type`) erzeugt
   trotzdem alle drei Karten ohne Fehler — Metadata/Distributions/Links
   passen sich an, was tatsächlich vorhanden ist.
+
+## S17 — Nachtrag zu S16: PNG statt kaputtem JPG-Alpha
+
+**Ziel:** ein echter Rendering-Bug, den Flo an einem Screenshot zeigte —
+die abgerundeten Kartenecken kamen im JPG als schwarze Keile statt als
+(gedachte) Übergänge raus. Dazu sein Wunsch nach PNG-Ausgabe für alle
+Diagramme, inklusive `fdo_overview`.
+
+**Uploads:** Repo-Bundle (A5); Flos Screenshot des kaputten Renders zur
+Fehlerdiagnose.
+
+**Substanz:**
+1. **Root Cause:** `_rasterise()` nahm die von `resvg-py` gelieferten
+   PNG-Bytes (mit korrektem Alpha-Kanal — transparent außerhalb der
+   `rx="18"`-Rundung) und rief `Image.convert("RGB")` auf, um daraus ein
+   JPG zu bauen. `convert("RGB")` **verwirft** den Alpha-Kanal einfach,
+   behält aber die rohen RGB-Werte darunter — bei den transparenten
+   Ecken war das zufällig (0,0,0), also Schwarz. Kein Kompositieren auf
+   einen Hintergrund, nur ein stillschweigend fallengelassener Kanal.
+2. **Fix:** `resvg-py`s PNG-Bytes werden jetzt direkt als
+   `fdo_ttl_snippet_*.png` geschrieben (kein PIL-Umweg nötig, `resvg`
+   liefert schon PNG) — echte Transparenz an den Ecken. Das JPG bleibt
+   zusätzlich bestehen (nicht jedes Folienwerkzeug mag Transparenz),
+   wird aber jetzt korrekt auf `CARD_BG` kompositiert
+   (`Image.alpha_composite`), nicht mehr das Alpha stillschweigend
+   verworfen.
+3. **`fdo_overview.png`:** `render_mermaid_to_jpg()` liefert von `mmdc`
+   ohnehin ein PNG als Zwischenschritt, das bisher nach der JPG-
+   Konvertierung einfach gelöscht wurde. Jetzt wird es vorher an
+   `fdo_overview.png` kopiert und bleibt erhalten — kein neuer
+   Renderaufwand, nur eine Zeile weniger Löschung.
+
+**Abnahme:** `fdo_ttl_snippet_*.png` hat an den Kartenecken Alpha 0
+(geprüft, nicht nur angenommen); das JPG zeigt an derselben Stelle
+`CARD_BG`, kein Schwarz; `fdo_overview.png` existiert neben `.jpg`.
+
+### Erledigt 2026-09-09
+
+Wie oben umgesetzt. `CARD_BG_RGB = (0x16, 0x1B, 0x2E)` als Tupel-
+Variante von `CARD_BG` ergänzt, für `Image.new("RGBA", size, CARD_BG_RGB
++ (255,))` als Kompositions-Hintergrund. `write_ttl_snippet_cards()`
+schreibt jetzt SVG+PNG+JPG statt SVG+JPG; `FDO_SQUIRREL_OWN_FILES` um
+die drei `.png`-Varianten ergänzt. `main.py` nimmt `fdo_overview.png`
+(`jpg_path.with_suffix(".png")`) mit in `generated_files` auf.
+
+**Verifiziert:**
+- **Alpha direkt geprüft, nicht nur visuell**: `PIL.Image.getpixel((0,
+  0))` auf `fdo_ttl_snippet_metadata.png` → `(0, 0, 0, 0)` (voll
+  transparent), Kartenmitte → `(22, 27, 46, 255)` (deckendes
+  `#161B2E`) — exakt `CARD_BG`.
+- JPG-Version dieselbe Stelle: `CARD_BG`-Farbe statt Schwarz, kein
+  Artefakt mehr.
+- Determinismus (S4) hält für alle PNG- **und** JPG-Ausgaben: zwei
+  Läufe, alles bytegleich.
+- Gegen beide echten Pakete (CIIC 81, Freshford) durchgetestet.
+
+**Nicht geprüft:** `fdo_overview.png`/`.jpg` selbst — `mmdc` steht in
+diesem Sandkasten weiterhin nicht zur Verfügung (bekannte Einschränkung
+seit S2), der Code-Pfad (`shutil.copyfile` vor der JPG-Konvertierung)
+ist aber trivial genug, dass ein Fehlschlag dort unwahrscheinlich ist;
+Flo bestätigt das beim nächsten echten Lauf.
 
 ## S9 — README.md auffrischen
 

@@ -547,6 +547,7 @@ def main():
             md_cff_graph_svg_path.with_suffix(".png"),
             mermaid_path,
             jpg_path,
+            jpg_path.with_suffix(".png"),
         )
         if p.exists()
     ] + [p for p in ttl_snippet_files if p.exists()]

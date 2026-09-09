@@ -92,11 +92,12 @@ Running the pipeline produces, in `output/`:
 - **`fdo_overview.mermaid`**  
   A Mermaid flowchart summarising the FDO (core metadata, distributions by role)
 
-- **`fdo_overview.jpg`** *(optional)*  
-  A high-resolution render of the diagram above. Needs `mmdc`
-  ([Mermaid CLI](https://github.com/mermaid-js/mermaid-cli)) on `PATH` and
-  Pillow installed; if either is missing, this step is skipped with a
-  one-line warning and everything else still runs.
+- **`fdo_overview.jpg`+`.png`** *(optional)*  
+  A high-resolution render of the diagram above (both formats — `mmdc`
+  renders PNG first regardless, so the PNG is kept alongside instead of
+  discarded). Needs `mmdc` ([Mermaid CLI](https://github.com/mermaid-js/mermaid-cli))
+  on `PATH` and Pillow installed; if either is missing, this step is
+  skipped with a one-line warning and everything else still runs.
 
 - **`fdo_files_roles_graph.svg`+`.png`** *(optional PNG)*  
   Which file in the package got which `fdo:role`: each file (or, for a
@@ -113,11 +114,14 @@ Running the pipeline produces, in `output/`:
   group (agents, classification, space & time, heritage object &
   technique).
 
-- **`fdo_ttl_snippet_metadata.svg`+`.jpg`**, **`fdo_ttl_snippet_distributions.svg`+`.jpg`** and **`fdo_ttl_snippet_links.svg`+`.jpg`** *(optional JPG)*  
+- **`fdo_ttl_snippet_metadata.svg`+`.png`+`.jpg`**, **`fdo_ttl_snippet_distributions.svg`+`.png`+`.jpg`** and **`fdo_ttl_snippet_links.svg`+`.png`+`.jpg`** *(optional PNG/JPG)*  
   Three small, dark "code cards" for dropping straight into a slide,
   each showing a real excerpt of `fdo-metadata.ttl` rather than the
   whole file, syntax-coloured, rendered at 2.5x for a crisp result on a
-  slide:
+  slide. PNG has real alpha transparency around the rounded corners
+  (rendered straight from `resvg-py`'s own bytes); JPG is composited
+  onto the card's own dark background instead for a flat file, for
+  slide tools that would rather not deal with transparency:
   - **metadata** — the core dataset block, everything except the two
     lines that are unreadable on a slide anyway (the full distribution
     id list, a JSON-in-a-literal blob).
