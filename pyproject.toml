@@ -23,14 +23,32 @@ dependencies = [
 # dependency list so `pip install fdo-squirrel` stays lean for callers
 # that only want fdo-metadata.ttl.
 
+[project.optional-dependencies]
+# S8 diagrams (fdo_files_roles*/fdo_md_cff*): rasterises the vendored
+# SVGs to PNG. Same "optional, skipped with a warning if missing" pattern
+# as mmdc for fdo_overview.jpg - the SVGs themselves are written either
+# way, only the PNG render needs this.
+diagrams = ["resvg-py>=0.4"]
+
 [project.scripts]
 fdo-squirrel = "main:main"
 
 [tool.setuptools]
-py-modules = ["main", "fdo_mermaid", "fdo_finalize", "fdo_manifest"]
-packages = ["fdo", "crosswalks", "ingest", "schemas", "schemas.md_cff"]
+py-modules = [
+    "main",
+    "fdo_mermaid",
+    "fdo_finalize",
+    "fdo_manifest",
+    "fdo_visuals_utils",
+    "fdo_files_roles_diagram",
+    "fdo_files_roles_graph",
+    "fdo_md_cff_diagram",
+    "fdo_md_cff_graph",
+]
+packages = ["fdo", "crosswalks", "ingest", "schemas", "schemas.md_cff", "fonts"]
 
 [tool.setuptools.package-data]
 fdo = ["classification_rules.yaml"]
 crosswalks = ["*.csv", "*.json", "*.yaml"]
 "schemas.md_cff" = ["*.yaml"]
+fonts = ["*.ttf"]

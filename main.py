@@ -16,6 +16,10 @@ from fdo import (
     fdo_squirrel_version,
 )
 from fdo_manifest import write_fdox_yaml
+from fdo_files_roles_diagram import write_files_roles_diagram
+from fdo_files_roles_graph import write_files_roles_graph
+from fdo_md_cff_diagram import write_md_cff_diagram
+from fdo_md_cff_graph import write_md_cff_graph
 from fdo_mermaid import FDOMermaidGenerator
 from fdo_finalize import render_mermaid_to_jpg, build_finished_bundle
 
@@ -431,6 +435,42 @@ def main():
     output_path.write_text(ttl, encoding="utf-8")
 
     # --------------------------------------------------
+    # Instance diagrams (S8, PRIMER.md): "Files and Roles" reads this
+    # first ttl write's own distribution/role triples for the *package's*
+    # files - deliberately before the generated-companion-files append
+    # below, so this stays a picture of what was in the package, not of
+    # fdo-squirrel's own output. Best-effort: skipped with a warning if
+    # resvg-py isn't installed, same pattern as fdo_overview.jpg's mmdc.
+    # --------------------------------------------------
+    files_roles_svg_path = output_dir / "fdo_files_roles.svg"
+    try:
+        write_files_roles_diagram(output_path, cw.title, files_roles_svg_path)
+        print(f"✔ Files-and-roles diagram written to {files_roles_svg_path}")
+    except Exception as e:
+        print(f"⚠ Files-and-roles diagram skipped: {e}")
+
+    files_roles_graph_svg_path = output_dir / "fdo_files_roles_graph.svg"
+    try:
+        write_files_roles_graph(output_path, cw.title, files_roles_graph_svg_path)
+        print(f"✔ Files-and-roles graph written to {files_roles_graph_svg_path}")
+    except Exception as e:
+        print(f"⚠ Files-and-roles graph skipped: {e}")
+
+    md_cff_svg_path = output_dir / "fdo_md_cff.svg"
+    try:
+        write_md_cff_diagram(md, cw.title, md_cff_svg_path)
+        print(f"✔ MD.cff diagram written to {md_cff_svg_path}")
+    except Exception as e:
+        print(f"⚠ MD.cff diagram skipped: {e}")
+
+    md_cff_graph_svg_path = output_dir / "fdo_md_cff_graph.svg"
+    try:
+        write_md_cff_graph(md, cw.title, md_cff_graph_svg_path)
+        print(f"✔ MD.cff graph written to {md_cff_graph_svg_path}")
+    except Exception as e:
+        print(f"⚠ MD.cff graph skipped: {e}")
+
+    # --------------------------------------------------
     # Write HTML modelling report (from rdf_modelling_report.json)
     # --------------------------------------------------
     json_report_path = output_dir / "rdf_modelling_report.json"
@@ -498,6 +538,14 @@ def main():
             json_report_path,
             html_report_path,
             fdox_yaml_path,
+            files_roles_svg_path,
+            files_roles_svg_path.with_suffix(".png"),
+            files_roles_graph_svg_path,
+            files_roles_graph_svg_path.with_suffix(".png"),
+            md_cff_svg_path,
+            md_cff_svg_path.with_suffix(".png"),
+            md_cff_graph_svg_path,
+            md_cff_graph_svg_path.with_suffix(".png"),
             mermaid_path,
             jpg_path,
         )

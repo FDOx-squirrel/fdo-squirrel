@@ -74,6 +74,10 @@ maschinenlesbar, `fdo-squirrel-registry` macht *viele* auffindbar.")
 | `fdo_mermaid.py` | `fdo-metadata.ttl` + `rdf_modelling_report.html` → `fdo_overview.mermaid` (589 Zeilen, tatsächlich importiert) |
 | `fdo_finalize.py` | `render_mermaid_to_jpg()` (braucht `mmdc`/Node, bricht sanft ab wenn fehlt), `build_finished_bundle()` |
 | `fdo_manifest.py` | Neu (S14): schreibt `FDOx.yaml`, ein kurzes Build-Manifest (Generator-Version, strukturelle Vermutung über das erzeugende Upstream-Tool) |
+| `fdo_visuals_utils.py` | Neu (S8): gemeinsame Stilkonstanten für die vier neuen Diagramme — Palette, Fira Sans, `resvg-py`-Rendering. An `fdox-visuals`s `visuals_utils.py` angelehnt (kopiert, nicht referenziert), nicht neu erfunden |
+| `fdo_files_roles_diagram.py` / `fdo_files_roles_graph.py` | Neu (S8): "Files and Roles" als Faktenblatt bzw. Knoten-Graph — welche Datei welche `fdo:role` bekommen hat |
+| `fdo_md_cff_diagram.py` / `fdo_md_cff_graph.py` | Neu (S8): "MD.cff ausgefüllt" als Faktenblatt bzw. Knoten-Graph — das eingelesene `MD.cff` mit echten Werten |
+| `fonts/` | Neu (S8): vendorte Fira-Sans-TTFs (Regular + Bold), von `fdox-visuals` kopiert (A3: Reuse heißt kopieren) — jetzt ein eigenes, leeres Python-Package (`__init__.py`) wegen `package-data`, siehe S8 |
 | `schemas/md_cff/MD.cff-schema.yaml` | Tatsächlich genutztes MD.cff-Schema (JSON Schema draft 2020-12) |
 | `crosswalks/crosswalk.fdo-metadata.yaml` | Regelbasierte CFF/codemeta/schema.org/Wikidata→RDF-Abbildung (22 `cff:`-Quellfelder, siehe Befund 3) |
 | `crosswalks/metadata-crosswalk.py` | Entwicklungswerkzeug zum Bauen/Pflegen des Crosswalk-Graphen; nicht Teil der Laufzeit-Pipeline, aber legitim — kein Aufräum-Kandidat (S5) |
@@ -248,6 +252,8 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | Nicht-IRI-förmige `id` bei unveröffentlichten Paketen (S13) | Fallback-URN aus dem Package-Source-Dateinamen (`urn:fdo-squirrel:unpublished/<slug>`) — Flos Entscheidung. `resolve_dataset_id()` löst das einmal in `main.py` auf, `cw` wird per `dataclasses.replace()` aktualisiert, damit Citation-Crosswalk-Engine und `crosswalk_to_rdf_turtle()` dieselbe ID sehen | 2026-09-09 |
 | `fdo-3d-packager`s Pin auf `fdo-squirrel` bumpen (Commit `504b7af`, 8 Commits hinter HEAD) | Noch nicht gemacht — gehört in einen eigenen `fdo-3d-packager`-Chat, nicht hier mit reingezogen (A3: ein Repo pro Chat). Flo wollte es ursprünglich hier mit erledigen, davon abgeraten | 2026-09-09 |
 | Wie festhalten, welche `fdo-squirrel`-Version ein FDO erzeugt hat? (S14) | Neue `FDOx.yaml` (Build-Manifest, gespeist aus `rdf_modelling_report.json`) + `prov:wasGeneratedBy`/`prov:SoftwareAgent` in der TTL selbst + `generator`-Feld im JSON-Report — Flos Entscheidung. Eine vollständige Toolchain-Datei (mit Blender-/Nexus-Versionen) bleibt außerhalb — das kann nur `fdo-3d-packager` wissen, eigener Chat | 2026-09-09 |
+| S8-Rendering: Mermaid (mmdc) oder eigenes SVG? | Eigenes SVG, wie `fdox-visuals` (`resvg-py`, kein `mmdc` nötig) — Flos Entscheidung | 2026-09-09 |
+| S8-Stil: Faktenblatt oder Knoten-Graph? | Beides — vier Diagramme statt zwei (Faktenblatt + Graph, für "Files and Roles" und "MD.cff ausgefüllt" je einmal) — Flos Entscheidung, nachdem er seine ursprünglichen Referenzbilder (Knoten-Graphen) gezeigt hatte | 2026-09-09 |
 
 ## A5. Was in welchem Chat hochgeladen wird
 
@@ -275,9 +281,9 @@ groß sein (3D-Modelle im Beispielpaket).
 | S5 | Aufräumen: `fdo_mermaid_old.py`, Root-`MD.cff.schema.yaml` (A1 Befund 2b/8) | fdo-squirrel | S0 | **erledigt 2026-09-08** (beide gelöscht, `crosswalks/metadata-crosswalk.py` bleibt — ist kein Aufräum-Kandidat, siehe Teil D) |
 | S6 | CIIC 81 real durchlaufen lassen | fdo-squirrel | `fdo-3d-packager` S10 | **erledigt 2026-09-09** |
 | S7 | Freshford Holy Well (`freshford-st-lachtains-well-low-poly`) ebenso | fdo-squirrel | S6 | **erledigt 2026-09-09** |
-| S8 | Instanz-Diagramme aus einem echten Lauf: "MD.cff ausgefüllt", "Files and Roles" (Muster: `fdo_mermaid.py`) | fdo-squirrel | S6 (Blocker jetzt weg, echte Läufe liegen vor) | offen |
+| S8 | Instanz-Diagramme aus einem echten Lauf: "MD.cff ausgefüllt", "Files and Roles" — je zwei Stile (Faktenblatt + Knoten-Graph) | fdo-squirrel | S6 | **erledigt 2026-09-09** |
 | S9 | README.md auffrischen (Python-Version, MD.cff-Feldliste, Status-Abschnitt) | fdo-squirrel | — | **erledigt 2026-09-08** |
-| S10 | Release: Versionsbump + Git-Tag | fdo-squirrel | S8 (A4: Flos Entscheidung, S6/S7 sind jetzt durch) | offen |
+| S10 | Release: Versionsbump + Git-Tag | fdo-squirrel | — (A4: Flos Entscheidung — S6/S7/S8 sind jetzt alle durch) | offen |
 | S11 | Versions-Metadaten mit tatsächlicher Release-Historie synchronisieren + Architektur-Bild-Referenz | fdo-squirrel | — | **erledigt 2026-09-08** |
 | S12 | fdo-squirrel-registry-Rückflussliste verifizieren + `repository-code`-Org korrigieren | fdo-squirrel | — | **erledigt 2026-09-09** |
 | S13 | Zwei Bugs aus S6/S7 gegen echte Pakete: fehlendes Escaping in Turtle-Literalen, nicht-IRI-förmige `id` bei unveröffentlichten Paketen | fdo-squirrel | S6, S7 | **erledigt 2026-09-09** |
@@ -658,36 +664,99 @@ Platzhaltertext) und eine mehrzeilige, aus Sketchfab importierte
 noch unveröffentlichtes Paket wie dieses wären beide Bugs synthetischen
 Tests vermutlich weiter entgangen.
 
-## S8 — Instanz-Diagramme (Vorschlag)
+## S8 — Instanz-Diagramme
 
-**Ziel:** aus einem echten, abgeschlossenen `fdo-squirrel`-Lauf (Ausgabe:
-`fdo-metadata.ttl` + `rdf_modelling_report.html`) zwei weitere Diagramme
-erzeugen, analog zu `fdo_overview.mermaid`/`.jpg`:
+**Ziel:** aus einem echten, abgeschlossenen `fdo-squirrel`-Lauf zwei
+weitere Diagramme erzeugen, analog zu `fdo_overview.mermaid`/`.jpg`:
 
 - **"Files and Roles"** — welche Datei im Paket welche `fdo:role`
-  bekommen hat (Muster: Flos alte Folie 28) — liest dieselben Daten, die
-  die Rollen-Klassifikation in `fdo/fdo_rdf.py` schon berechnet.
+  bekommen hat (Muster: Flos alte Folie 28).
 - **"MD.cff ausgefüllt"** — das eingelesene `MD.cff` als gefülltes
-  Klassendiagramm (Muster: Flos alte Folie 27; strukturell verwandt mit
-  `fdox-visuals`s S5, nur mit echten Werten statt Feldnamen).
+  Klassendiagramm, echte Werte statt Feldnamen (Muster: Flos alte
+  Folie 27).
 
-**Uploads (Vorschlag):** ein echtes `output/`-Verzeichnis aus einem
-CIIC-81- oder Freshford-Lauf (S6/S7), nicht neu generieren müssen.
+**Uploads:** Repo-Bundle (A5); zur Verifikation die beiden echten
+Bundles aus S6/S7.
 
-**Substanz (Vorschlag, im Chat zu verfeinern):**
-- Vermutlich neue Module `fdo_files_roles_diagram.py`/
-  `fdo_md_cff_diagram.py`, parallel zu `fdo_mermaid.py`, nicht als
-  Erweiterung *von* `fdo_mermaid.py`.
-- Offene Frage: Mermaid (wie `fdo_overview`, durch dieselbe
-  `render_mermaid_to_jpg()`-Pipeline) oder eigenes SVG (wie
-  `fdox-visuals`s Ansatz, dann aber eine neue, `mmdc`-freie Abhängigkeit
-  in `fdo-squirrel`) — beide haben in der Familie Präzedenzfälle.
-- Vermutlich separates Tool wie `fdo_mermaid.py` es teilweise schon ist
-  (in der Pipeline UND einzeln aufrufbar), passt zum bestehenden Muster.
+**Substanz (nach Diskussion mit Flo, zwei Design-Fragen geklärt, A4):**
+- **Rendering:** eigenes SVG (`resvg-py`), wie `fdox-visuals` — kein
+  `mmdc` nötig, dafür eine neue optionale Abhängigkeit.
+- **Stil:** Flo zeigte seine ursprünglichen Referenzbilder (Knoten-
+  Graphen: zentraler Knoten/Datei-Boxen mit Pfeilen zu Rollen-Knoten) —
+  deutlich anders als der erste, selbst entworfene "Faktenblatt"-Stil
+  (gestapelte Panels). Entscheidung: **beide**, macht aus den zwei
+  geplanten Diagrammen vier.
 
-**Abnahme (Vorschlag):** beide Diagramme für den echten CIIC-81-Lauf
-erzeugt, Sichtprüfung gegen die alten Folien 27/28 (nicht identisch, aber
-inhaltlich vergleichbar — echte Werte statt der alten Beispieldaten).
+**Abnahme:** vier Diagramme (SVG+PNG) für CIIC 81 und Freshford erzeugt,
+Sichtprüfung gegen Flos Referenzbilder, im `fdox-visuals`-Stil (Farben,
+Fira Sans), deterministisch, aus einem echten `pip install` heraus
+lauffähig.
+
+### Erledigt 2026-09-09
+
+**Sechs neue Dateien:**
+- `fdo_visuals_utils.py` — Palette (`#004473` Navy, `#0E9488` Teal,
+  `#8034C9` Purple, `#C2790C` Orange, `#161B2E`/`#5B6478` Text), Fira-
+  Sans-`@font-face`, `resvg_py.svg_to_bytes()`-Wrapper, `wrap_text()`
+  (inkl. Hart-Umbruch für lange Wörter ohne Leerzeichen — siehe Fund
+  unten), Pfeil-Marker + S-Kurven-Connector für die Graph-Varianten. An
+  `fdox-visuals`s `visuals_utils.py` angelehnt, kopiert nicht importiert
+  (A3).
+- `fdo_files_roles_diagram.py` (Faktenblatt) + `fdo_files_roles_graph.py`
+  (Knoten-Graph, importiert die Extraktions-/Gruppierungslogik aus dem
+  Faktenblatt-Modul statt sie zu duplizieren — beide Stile können sich
+  über die Dateiliste nie widersprechen). Liest `fdo-metadata.ttl` mit
+  demselben Regex-Ansatz, den `fdo_mermaid.py` schon für seine eigene
+  Distribution-Erkennung nutzt (keine neue RDF-Parser-Abhängigkeit).
+  Rollen mit mehr als 6 Dateien werden nach Verzeichnis gruppiert
+  ("viewer/ — 8 files") statt einzeln aufgelistet — sonst wird ein
+  3DHOP-Viewer-Bundle (~24 Dateien) zur Ausgabe, nicht zur Information.
+- `fdo_md_cff_diagram.py` (Faktenblatt) + `fdo_md_cff_graph.py`
+  (Knoten-Graph, importiert dieselben Feld-Extraktionsfunktionen aus dem
+  Faktenblatt-Modul). Fünf Abschnitte (Core, Agents, Classification,
+  Space & Time, Heritage Object & Technique), nur die tatsächlich
+  gefüllten werden gezeichnet.
+
+**`fonts/` vendort** (zwei Fira-Sans-TTFs von `fdox-visuals` kopiert,
+A3) — musste zu einem echten Python-Package werden (`__init__.py`),
+sonst fehlen die Fonts bei einem normalen (nicht editierbaren)
+`pip install`, wie ihn `fdo-3d-packager`s Pin verwendet. Verifiziert:
+frisches venv, `pip install` (nicht `-e`), `fdo_visuals_utils.FONTS_DIR`
+zeigt korrekt auf die installierten TTFs, kompletter Lauf über den
+echten `fdo-squirrel`-Konsolenbefehl erzeugt alle vier Diagramme.
+
+**`pyproject.toml`:** die neun neuen Module in `py-modules`, `fonts` in
+`packages` + `package-data`; `resvg-py` als optionales Extra
+(`fdo-squirrel[diagrams]`), nicht in die Basis-Abhängigkeiten — dasselbe
+Muster wie `mmdc` für `fdo_overview.jpg`: fehlt es, wird die
+PNG-Erzeugung übersprungen, das SVG steht trotzdem, der Rest der
+Pipeline läuft unbeeinflusst weiter.
+
+**Zwei echte Layoutfehler beim Testen mit echten Daten gefunden und
+gefixt** (Freshfords/CIIC-81s MD.cff, nicht synthetisch):
+1. Eine lange URL ohne Leerzeichen (`related_resources`-Ziel) lief über
+   den rechten Panelrand hinaus — `wrap_text()` konnte nur an
+   Leerzeichen umbrechen. Fix: Wörter länger als die Zeilenbreite werden
+   jetzt zusätzlich hart in Stücke geschnitten.
+2. Im Knoten-Graphen für "MD.cff ausgefüllt" lief mehrfach der Inhalt
+   über den unteren Rand der Satellitenbox hinaus in die nächste Box
+   hinein. Ursache: die Höhenberechnung zählte nur die Wert-Zeilen, nicht
+   die Label-Zeile jeder Zeile mit. Fix: `+1` pro Zeile in der
+   Höhenberechnung.
+
+**Verifiziert, gegen beide echten Pakete (CIIC 81, Freshford):**
+- Alle vier Diagramme erzeugt, visuell geprüft (siehe die beiden
+  Fixes oben) — Ergebnis entspricht in der Struktur Flos
+  Referenzbildern, in der Farbgebung/Typografie der `fdox-visuals`-
+  Familie.
+- Determinismus (S4) hält für alle vier SVG+PNG-Paare **und**
+  `fdo-metadata.ttl`: zwei Läufe, alles bytegleich.
+- Aus einem echten, nicht-editierbaren `pip install` heraus (frisches
+  venv, `pip install <repo>`, dann `resvg-py` dazu) über den
+  `fdo-squirrel`-Konsolenbefehl gelaufen — nicht nur im Dev-Checkout.
+
+**README.md** um die vier neuen Ausgabedateien + den optionalen
+`resvg-py`-Hinweis ergänzt.
 
 ## S9 — README.md auffrischen
 

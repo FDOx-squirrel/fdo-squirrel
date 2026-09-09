@@ -98,6 +98,26 @@ Running the pipeline produces, in `output/`:
   Pillow installed; if either is missing, this step is skipped with a
   one-line warning and everything else still runs.
 
+- **`fdo_files_roles.svg`/`.svg`+`.png`** and **`fdo_files_roles_graph.svg`+`.png`** *(optional PNG)*  
+  Two styles of the same picture: which file in the package got which
+  `fdo:role`. The plain version groups files under a coloured role badge;
+  the `_graph` version draws each file as its own box with a curved
+  connector into a shared role node. Files beyond a handful per role are
+  summarised by directory rather than listed one by one.
+
+- **`fdo_md_cff.svg`+`.png`** and **`fdo_md_cff_graph.svg`+`.png`** *(optional PNG)*  
+  The ingested `MD.cff`, populated with this package's real values
+  (not a schema diagram - one specific FDO's actual content). Same two
+  styles: a stacked fact sheet, or a node graph with a central `MD_cff`
+  node and one satellite box per populated group (agents, classification,
+  space & time, heritage object & technique).
+
+  All four PNGs need the optional `resvg-py` extra
+  (`pip install fdo-squirrel[diagrams]`); without it, the SVGs are still
+  written, just not rasterised. Fonts (Fira Sans) are vendored under
+  `fonts/`, same as `fdox-visuals`, so rendering doesn't depend on what's
+  installed system-wide.
+
 - **`<package-name>-fdo-bundle.zip`**  
   The original source ZIP plus all of the files above, packaged into one
   self-contained, ready-to-(re)publish archive - replacing any stale copies
@@ -154,8 +174,16 @@ npm install -g @mermaid-js/mermaid-cli
 pip install -r requirements.txt   # picks up Pillow, used for the PNG->JPG step
 ```
 
-Without these, `python main.py` still produces everything else - the JPG
-render is the only step that's skipped, not the whole run.
+The four `fdo_files_roles*`/`fdo_md_cff*` PNGs (S8) need a separate,
+lighter dependency instead - no Node.js involved:
+
+```bash
+pip install fdo-squirrel[diagrams]   # or: pip install resvg-py
+```
+
+Without these, `python main.py` still produces everything else - each
+missing-dependency step is skipped on its own with a one-line warning,
+never the whole run.
 
 ---
 
