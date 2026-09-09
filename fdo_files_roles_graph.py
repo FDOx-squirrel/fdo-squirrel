@@ -1,10 +1,12 @@
 """fdo_files_roles_graph.py — "Files and Roles" as a node graph: each
 file (or, for a role with many files, a grouped summary) as its own box,
 connected by curved arrows to a shared, coloured role node. The
-graph-style sibling to fdo_files_roles_diagram.py's fact-sheet layout -
-Flo wanted both (S8, PRIMER.md), not one replacing the other.
+graph-style sibling to fdo_files_roles_common.py's data - which used to
+back a fact-sheet layout too (fdo_files_roles_diagram.py), dropped in
+S15 after Flo compared it side by side with this graph and found it
+added nothing the graph didn't already show more clearly.
 
-Reuses fdo_files_roles_diagram's extraction/grouping logic rather than
+Reuses fdo_files_roles_common's extraction/grouping logic rather than
 re-deriving it, so the two styles can never silently disagree about
 which files exist or how they're grouped.
 """
@@ -15,12 +17,12 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from fdo_files_roles_diagram import (
-    _GROUP_THRESHOLD,
-    _ROLE_COLORS,
-    _ROLE_ORDER,
-    _extract_distributions,
-    _group_for_display,
+from fdo_files_roles_common import (
+    GROUP_THRESHOLD,
+    ROLE_COLORS,
+    ROLE_ORDER,
+    extract_distributions,
+    group_for_display,
 )
 from fdo_visuals_utils import (
     BG,
@@ -38,11 +40,11 @@ from fdo_visuals_utils import (
 
 def build_svg(raw_ttl: str, title: str) -> Tuple[str, int, int]:
     by_role: Dict[str, List[str]] = defaultdict(list)
-    for path, role in _extract_distributions(raw_ttl):
+    for path, role in extract_distributions(raw_ttl):
         by_role[role].append(path)
 
-    ordered_roles = [r for r in _ROLE_ORDER if r in by_role]
-    ordered_roles += sorted(r for r in by_role if r not in _ROLE_ORDER)
+    ordered_roles = [r for r in ROLE_ORDER if r in by_role]
+    ordered_roles += sorted(r for r in by_role if r not in ROLE_ORDER)
 
     file_box_w, file_box_h, file_gap = 320, 46, 12
     pill_w, pill_h = 190, 46
@@ -52,9 +54,9 @@ def build_svg(raw_ttl: str, title: str) -> Tuple[str, int, int]:
 
     body: List[str] = []
     for i, role in enumerate(ordered_roles):
-        color = _ROLE_COLORS[i % len(_ROLE_COLORS)]
+        color = ROLE_COLORS[i % len(ROLE_COLORS)]
         paths = by_role[role]
-        display_lines = _group_for_display(paths)
+        display_lines = group_for_display(paths)
 
         block_top = y
         for dl in display_lines:

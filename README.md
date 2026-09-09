@@ -98,21 +98,30 @@ Running the pipeline produces, in `output/`:
   Pillow installed; if either is missing, this step is skipped with a
   one-line warning and everything else still runs.
 
-- **`fdo_files_roles.svg`/`.svg`+`.png`** and **`fdo_files_roles_graph.svg`+`.png`** *(optional PNG)*  
-  Two styles of the same picture: which file in the package got which
-  `fdo:role`. The plain version groups files under a coloured role badge;
-  the `_graph` version draws each file as its own box with a curved
-  connector into a shared role node. Files beyond a handful per role are
-  summarised by directory rather than listed one by one.
+- **`fdo_files_roles_graph.svg`+`.png`** *(optional PNG)*  
+  Which file in the package got which `fdo:role`: each file (or, for a
+  role with many files, a directory-grouped summary) as its own box, with
+  a curved connector into a shared, coloured role node. (An earlier
+  fact-sheet-style version was dropped - side by side with this graph it
+  didn't add anything the graph didn't already show more clearly.)
 
 - **`fdo_md_cff.svg`+`.png`** and **`fdo_md_cff_graph.svg`+`.png`** *(optional PNG)*  
   The ingested `MD.cff`, populated with this package's real values
-  (not a schema diagram - one specific FDO's actual content). Same two
-  styles: a stacked fact sheet, or a node graph with a central `MD_cff`
-  node and one satellite box per populated group (agents, classification,
-  space & time, heritage object & technique).
+  (not a schema diagram - one specific FDO's actual content). Two styles:
+  a stacked fact sheet (denser, better for a lot of text), or a node
+  graph with a central `MD_cff` node and one satellite box per populated
+  group (agents, classification, space & time, heritage object &
+  technique).
 
-  All four PNGs need the optional `resvg-py` extra
+- **`fdo_ttl_snippet.svg`+`.jpg`** *(optional JPG)*  
+  A small, dark "code card" for dropping straight into a slide: a
+  curated handful of the most presentation-relevant triples from
+  `fdo-metadata.ttl`'s own core dataset block (title, description,
+  creator, publisher, license, type, spatial - whichever of those a
+  given FDO actually has), syntax-coloured. Not the whole file, and not
+  configurable per run - a fixed, deterministic selection.
+
+  All diagram PNGs/JPGs need the optional `resvg-py` extra
   (`pip install fdo-squirrel[diagrams]`); without it, the SVGs are still
   written, just not rasterised. Fonts (Fira Sans) are vendored under
   `fonts/`, same as `fdox-visuals`, so rendering doesn't depend on what's
@@ -174,8 +183,8 @@ npm install -g @mermaid-js/mermaid-cli
 pip install -r requirements.txt   # picks up Pillow, used for the PNG->JPG step
 ```
 
-The four `fdo_files_roles*`/`fdo_md_cff*` PNGs (S8) need a separate,
-lighter dependency instead - no Node.js involved:
+The `fdo_files_roles_graph`/`fdo_md_cff*`/`fdo_ttl_snippet` PNGs/JPGs (S8)
+need a separate, lighter dependency instead - no Node.js involved:
 
 ```bash
 pip install fdo-squirrel[diagrams]   # or: pip install resvg-py

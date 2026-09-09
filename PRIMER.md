@@ -75,7 +75,8 @@ maschinenlesbar, `fdo-squirrel-registry` macht *viele* auffindbar.")
 | `fdo_finalize.py` | `render_mermaid_to_jpg()` (braucht `mmdc`/Node, bricht sanft ab wenn fehlt), `build_finished_bundle()` |
 | `fdo_manifest.py` | Neu (S14): schreibt `FDOx.yaml`, ein kurzes Build-Manifest (Generator-Version, strukturelle Vermutung über das erzeugende Upstream-Tool) |
 | `fdo_visuals_utils.py` | Neu (S8): gemeinsame Stilkonstanten für die vier neuen Diagramme — Palette, Fira Sans, `resvg-py`-Rendering. An `fdox-visuals`s `visuals_utils.py` angelehnt (kopiert, nicht referenziert), nicht neu erfunden |
-| `fdo_files_roles_diagram.py` / `fdo_files_roles_graph.py` | Neu (S8): "Files and Roles" als Faktenblatt bzw. Knoten-Graph — welche Datei welche `fdo:role` bekommen hat |
+| `fdo_files_roles_common.py` / `fdo_files_roles_graph.py` | "Files and Roles" — welche Datei welche `fdo:role` bekommen hat. `_common` (S15, vormals `_diagram.py`) trägt nur noch die geteilten Extraktions-/Gruppierungsfunktionen; das eigenständige Faktenblatt aus S8 wurde in S15 wieder entfernt (redundant zum Graph) |
+| `fdo_ttl_snippet.py` | Neu (S15): kurzes, dunkles "Code-Card"-JPG mit einer kuratierten Auswahl echter Turtle-Zeilen, für Folien |
 | `fdo_md_cff_diagram.py` / `fdo_md_cff_graph.py` | Neu (S8): "MD.cff ausgefüllt" als Faktenblatt bzw. Knoten-Graph — das eingelesene `MD.cff` mit echten Werten |
 | `fonts/` | Neu (S8): vendorte Fira-Sans-TTFs (Regular + Bold), von `fdox-visuals` kopiert (A3: Reuse heißt kopieren) — jetzt ein eigenes, leeres Python-Package (`__init__.py`) wegen `package-data`, siehe S8 |
 | `schemas/md_cff/MD.cff-schema.yaml` | Tatsächlich genutztes MD.cff-Schema (JSON Schema draft 2020-12) |
@@ -254,6 +255,8 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | Wie festhalten, welche `fdo-squirrel`-Version ein FDO erzeugt hat? (S14) | Neue `FDOx.yaml` (Build-Manifest, gespeist aus `rdf_modelling_report.json`) + `prov:wasGeneratedBy`/`prov:SoftwareAgent` in der TTL selbst + `generator`-Feld im JSON-Report — Flos Entscheidung. Eine vollständige Toolchain-Datei (mit Blender-/Nexus-Versionen) bleibt außerhalb — das kann nur `fdo-3d-packager` wissen, eigener Chat | 2026-09-09 |
 | S8-Rendering: Mermaid (mmdc) oder eigenes SVG? | Eigenes SVG, wie `fdox-visuals` (`resvg-py`, kein `mmdc` nötig) — Flos Entscheidung | 2026-09-09 |
 | S8-Stil: Faktenblatt oder Knoten-Graph? | Beides — vier Diagramme statt zwei (Faktenblatt + Graph, für "Files and Roles" und "MD.cff ausgefüllt" je einmal) — Flos Entscheidung, nachdem er seine ursprünglichen Referenzbilder (Knoten-Graphen) gezeigt hatte | 2026-09-09 |
+| "Files and Roles"-Faktenblatt behalten? (S15) | Nein, entfernt — Flo verglich beide Stile nebeneinander mit echten Daten: der Graph zeigt dieselbe Gruppierung, aber mit echten Verbindungen, das Faktenblatt bot daneben keinen Mehrwert. Bei "MD.cff" bleiben beide, da das Faktenblatt dort deutlich mehr Text kompakter unterbringt als der Graph könnte | 2026-09-09 |
+| TTL-Snippet-als-JPG für Präsentationen (S15) | Automatisch pro Lauf, wie die anderen S8-Diagramme (nicht als separates, manuell aufgerufenes Werkzeug) — Flos Entscheidung | 2026-09-09 |
 
 ## A5. Was in welchem Chat hochgeladen wird
 
@@ -281,7 +284,8 @@ groß sein (3D-Modelle im Beispielpaket).
 | S5 | Aufräumen: `fdo_mermaid_old.py`, Root-`MD.cff.schema.yaml` (A1 Befund 2b/8) | fdo-squirrel | S0 | **erledigt 2026-09-08** (beide gelöscht, `crosswalks/metadata-crosswalk.py` bleibt — ist kein Aufräum-Kandidat, siehe Teil D) |
 | S6 | CIIC 81 real durchlaufen lassen | fdo-squirrel | `fdo-3d-packager` S10 | **erledigt 2026-09-09** |
 | S7 | Freshford Holy Well (`freshford-st-lachtains-well-low-poly`) ebenso | fdo-squirrel | S6 | **erledigt 2026-09-09** |
-| S8 | Instanz-Diagramme aus einem echten Lauf: "MD.cff ausgefüllt", "Files and Roles" — je zwei Stile (Faktenblatt + Knoten-Graph) | fdo-squirrel | S6 | **erledigt 2026-09-09** |
+| S8 | Instanz-Diagramme aus einem echten Lauf: "MD.cff ausgefüllt", "Files and Roles" — je zwei Stile (Faktenblatt + Knoten-Graph) | fdo-squirrel | S6 | **erledigt 2026-09-09** (S15: "Files and Roles"-Faktenblatt wieder entfernt) |
+| S15 | Nachtrag zu S8: "Files and Roles"-Faktenblatt entfernen (redundant zum Graph) + neues TTL-Snippet-JPG für Präsentationen | fdo-squirrel | S8 | **erledigt 2026-09-09** |
 | S9 | README.md auffrischen (Python-Version, MD.cff-Feldliste, Status-Abschnitt) | fdo-squirrel | — | **erledigt 2026-09-08** |
 | S10 | Release: Versionsbump + Git-Tag | fdo-squirrel | — (A4: Flos Entscheidung — S6/S7/S8 sind jetzt alle durch) | offen |
 | S11 | Versions-Metadaten mit tatsächlicher Release-Historie synchronisieren + Architektur-Bild-Referenz | fdo-squirrel | — | **erledigt 2026-09-08** |
@@ -757,6 +761,88 @@ gefixt** (Freshfords/CIIC-81s MD.cff, nicht synthetisch):
 
 **README.md** um die vier neuen Ausgabedateien + den optionalen
 `resvg-py`-Hinweis ergänzt.
+
+## S15 — Nachtrag zu S8: Faktenblatt raus, TTL-Snippet rein
+
+**Ziel:** zwei Korrekturen, nachdem Flo S8 gegen ein echtes, mit
+`fdo-3d-packager` gebautes CIIC-81-Bundle getestet hatte.
+
+**Uploads:** Repo-Bundle (A5); die vier S8-PNGs aus Flos echtem Testlauf
+zur Sichtprüfung.
+
+**Substanz (nach Diskussion mit Flo, A4):**
+1. **"Files and Roles"-Faktenblatt entfernen.** Nebeneinander mit dem
+   Graph verglichen: gleiche Gruppierung, aber ohne die echten
+   Verbindungslinien — bot keinen eigenständigen Wert. Bei "MD.cff"
+   bleiben beide Stile, das Faktenblatt bringt dort spürbar mehr Text
+   unter als der Graph vernünftig könnte.
+2. **Neu: TTL-Snippet als JPG**, automatisch pro Lauf — Flos Idee für
+   Präsentationsfolien, nach zwei Beispielbildern (dunkler Code-Block,
+   syntax-eingefärbt, mit Objekt-Foto und DOI-Verweis daneben — das Foto/
+   Maskottchen-Layout bleibt manuelles Folienbauen, nur der Code-Block
+   wird automatisiert).
+
+**Abnahme:** `fdo_files_roles.svg`/`.png` existieren nicht mehr;
+`fdo_ttl_snippet.svg`+`.jpg` entstehen bei jedem Lauf, zeigen eine feste,
+kuratierte Auswahl echter Turtle-Zeilen, deterministisch.
+
+### Erledigt 2026-09-09
+
+**Faktenblatt-Rückbau:** `fdo_files_roles_diagram.py` gelöscht, seine
+geteilten Hilfsfunktionen (`_extract_distributions`/`_group_for_display`/
+`_ROLE_ORDER`/`_ROLE_COLORS`/`_GROUP_THRESHOLD`) in ein neues
+`fdo_files_roles_common.py` verschoben (ohne führenden Unterstrich, jetzt
+öffentlich, da `fdo_files_roles_graph.py` sie importiert). `main.py` ruft
+`write_files_roles_diagram()` nicht mehr auf, die Datei ist raus aus
+`generated_files`. Dabei den in einem früheren Chat-Abschnitt schon
+diskutierten, aber nie gepatchten Schutz mit eingebaut: eine feste Liste
+`FDO_SQUIRREL_OWN_FILES` (eigene Signaturdateien) wird jetzt aus
+`extract_distributions()` rausgefiltert — falls doch mal ein fertiges
+`<slug>-fdo-bundle.zip` als frisches `--package` reinkommt (genau das war
+Flos Testfall), tauchen `fdo-metadata.ttl`, die Reports etc. nicht mehr
+als vermeintlicher Paketinhalt auf.
+
+**Neues `fdo_ttl_snippet.py`:** liest `fdo-metadata.ttl` mit einem
+Regex-Ansatz wie `fdo_mermaid.py`, wählt aus einer festen, priorisierten
+Prädikat-Liste (`dct:title`, `dct:description`, `dct:creator`,
+`dct:publisher`, `dct:license`, `dct:type`, `dct:spatial`,
+`dct:subject`) bis zu sieben tatsächlich vorhandene Zeilen aus,
+leichtgewichtige regex-basierte Syntax-Einfärbung (IRIs, Literale,
+Prädikate je eine Farbe), dunkler Card-Hintergrund mit drei "Traffic
+Light"-Punkten oben (Code-Screenshot-Ästhetik). Rendert über `resvg-py`
+zu PNG-Bytes, dann direkt mit Pillow als JPG gespeichert (kein Umweg über
+eine PNG-Datei) — Ausgabeformat war explizit Flos Wunsch ("als JPG").
+
+**Ein Extraktions-Bug unterwegs gefunden und gefixt:** die erste Version
+suchte den schließenden `.` des Kern-Dataset-Blocks auf einer eigenen
+Zeile — in der echten TTL sitzt er aber direkt an der letzten
+Prädikat-Zeile dran (`... .`  ohne Zeilenumbruch davor). Matchte dadurch
+gar nichts, `fdo_ttl_snippet.jpg` bestand nur aus dem leeren Card-Rahmen.
+Fix: die Dataset-Deklaration selbst als Anker suchen (`re.search`, nicht
+an den Blockanfang gebunden — die @prefix-Zeilen und der Kern-Block sind
+NICHT durch eine Leerzeile getrennt, nur einzelne `\n`), dann bis zur
+nächsten echten Leerzeile lesen.
+
+**Verifiziert, gegen beide echten Pakete (CIIC 81, Freshford):**
+- Card zeigt für CIIC 81 sieben Zeilen (alle acht Wunsch-Prädikate bis
+  auf `dct:subject`, da `dct:type` schon vorhanden war und die Kappung
+  bei 7 greift), für Freshford sechs (kein `dct:spatial`/`dct:type` im
+  MD.cff, fällt korrekt auf die vorhandenen zurück, inkl. der
+  Fallback-URN aus S13 als Subject-Zeile).
+- Lange `dct:description`-Werte werden auf ~90 Zeichen gekürzt (Freshford
+  hat eine sehr lange, mehrzeilige Beschreibung — im Snippet sauber
+  einzeilig mit "…" gekappt).
+- Determinismus (S4) hält für `fdo_ttl_snippet.svg`+`.jpg` **und** alle
+  übrigen Ausgaben: zwei Läufe, alles bytegleich (auch das JPG selbst,
+  trotz JPEG-Encoder).
+- Aus einem echten, nicht-editierbaren `pip install` heraus (frisches
+  venv) über den `fdo-squirrel`-Konsolenbefehl gelaufen, nicht nur im
+  Dev-Checkout.
+
+**`pyproject.toml`:** `fdo_files_roles_diagram` aus `py-modules` raus,
+`fdo_files_roles_common` + `fdo_ttl_snippet` rein. **README.md:**
+Output-Abschnitt auf die jetzt drei (statt zwei) S8-Diagrammthemen
+aktualisiert.
 
 ## S9 — README.md auffrischen
 
