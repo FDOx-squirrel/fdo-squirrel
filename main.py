@@ -21,7 +21,7 @@ from fdo_ttl_snippet import write_ttl_snippet_cards
 from fdo_md_cff_diagram import write_md_cff_diagram
 from fdo_md_cff_graph import write_md_cff_graph
 from fdo_mermaid import FDOMermaidGenerator
-from fdo_finalize import render_mermaid_to_jpg, build_finished_bundle
+from fdo_finalize import render_mermaid_to_png, build_finished_bundle
 
 # --------------------------------------------------
 # HARDCODED FDO PACKAGE
@@ -440,7 +440,7 @@ def main():
     # files - deliberately before the generated-companion-files append
     # below, so this stays a picture of what was in the package, not of
     # fdo-squirrel's own output. Best-effort: skipped with a warning if
-    # resvg-py isn't installed, same pattern as fdo_overview.jpg's mmdc.
+    # resvg-py isn't installed, same pattern as fdo_overview.png's mmdc.
     # --------------------------------------------------
     files_roles_graph_svg_path = output_dir / "fdo_files_roles_graph.svg"
     try:
@@ -452,8 +452,8 @@ def main():
     ttl_snippet_files = []
     try:
         ttl_snippet_files = write_ttl_snippet_cards(output_path, cw.title, output_dir)
-        jpgs = [p.name for p in ttl_snippet_files if p.suffix == ".jpg"]
-        print(f"✔ TTL snippet cards written: {', '.join(jpgs) if jpgs else '(SVG only, resvg-py missing)'}")
+        pngs = [p.name for p in ttl_snippet_files if p.suffix == ".png"]
+        print(f"✔ TTL snippet cards written: {', '.join(pngs) if pngs else '(SVG only, resvg-py missing)'}")
     except Exception as e:
         print(f"⚠ TTL snippet cards skipped: {e}")
 
@@ -515,11 +515,13 @@ def main():
         print(f"⚠ Mermaid generation skipped: {e}")
 
     # --------------------------------------------------
-    # Render the Mermaid diagram as a high-resolution JPG (best effort -
-    # see fdo_finalize.render_mermaid_to_jpg for the Node/Pillow fallback)
+    # Render the Mermaid diagram as a high-resolution PNG (best effort -
+    # see fdo_finalize.render_mermaid_to_png for the Node fallback). No
+    # JPG (S19, PRIMER.md) - PNG+SVG only, consistent with every other
+    # diagram this tool writes.
     # --------------------------------------------------
-    jpg_path = output_dir / "fdo_overview.jpg"
-    render_mermaid_to_jpg(mermaid_path, jpg_path)
+    png_path = output_dir / "fdo_overview.png"
+    render_mermaid_to_png(mermaid_path, png_path)
 
     # --------------------------------------------------
     # Describe the generated companion files as additional
@@ -546,8 +548,7 @@ def main():
             md_cff_graph_svg_path,
             md_cff_graph_svg_path.with_suffix(".png"),
             mermaid_path,
-            jpg_path,
-            jpg_path.with_suffix(".png"),
+            png_path,
         )
         if p.exists()
     ] + [p for p in ttl_snippet_files if p.exists()]

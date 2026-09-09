@@ -70,7 +70,55 @@ fdo_classes:
 
   fdo:3DDataFDO:
     default_role: data
+    # Rule order matters: rules are tried top to bottom and the first
+    # match wins (fdo_rdf.py:_classify_role). Folder-based path_prefix
+    # rules therefore come before the generic extension rules below, so
+    # that e.g. a .jpeg under data/textures/ is classified by *where it
+    # is* (auxiliary) rather than by its extension alone (which the
+    # image-extension rule further down would otherwise resolve to
+    # "documentation" first). Bundle layout reference: fdo-3d-packager's
+    # step_bundle.py module docstring (data/model/, data/textures/,
+    # data/images/, viewer/) -- confirmed against real CIIC 81 /
+    # Freshford packages, see fdo-3d-packager PRIMER.md Teil D
+    # (classification_rules.yaml gap) and this repo's PRIMER.md S18.
     rules:
+      - match:
+          filename: ["MD.cff", "CITATION.cff"]
+        role: metadata
+
+      - match:
+          filename_prefix: ["README"]
+          extension: [".md", ".txt"]
+        role: documentation
+
+      - match:
+          path_prefix: ["data/model/", "model/"]
+        role: model
+
+      - match:
+          path_prefix: ["data/textures/", "textures/"]
+        role: auxiliary
+
+      - match:
+          path_prefix: ["data/images/", "images/"]
+        role: documentation
+
+      - match:
+          # 3DHOP miniviewer, vendored wholesale into the bundle
+          # (fdo-3d-packager step_bundle.py) -- html/js/css plus its
+          # LICENSE.txt (GPLv3 compliance file shipped alongside the
+          # vendored code). Supporting software for rendering the
+          # dataset, not the dataset itself.
+          path_prefix: ["viewer/"]
+        role: auxiliary
+
+      - match:
+          # Companion material file for .obj (mtllib) -- no rule existed
+          # for this extension at all before, so it fell through to the
+          # class default ("data").
+          extension: [".mtl"]
+        role: model
+
       - match:
           extension:
             [
@@ -106,19 +154,6 @@ fdo_classes:
       - match:
           extension: [".las", ".laz"]
         role: data
-
-      - match:
-          path_prefix: ["textures/"]
-        role: auxiliary
-
-      - match:
-          filename_prefix: ["README"]
-          extension: [".md", ".txt"]
-        role: documentation
-
-      - match:
-          filename: ["MD.cff", "CITATION.cff"]
-        role: metadata
 
   fdo:RegistryFDO:
     default_role: data

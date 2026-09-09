@@ -69,7 +69,6 @@ FDO_SQUIRREL_OWN_FILES = {
     "rdf_modelling_report.html",
     "fdox.yaml",
     "fdo_overview.mermaid",
-    "fdo_overview.jpg",
     "fdo_overview.png",  # older naming convention, found in Flo's local raw-fdo test zip
     "fdo_files_roles_graph.svg",
     "fdo_files_roles_graph.png",
@@ -79,13 +78,13 @@ FDO_SQUIRREL_OWN_FILES = {
     "fdo_md_cff_graph.png",
     "fdo_ttl_snippet_metadata.svg",
     "fdo_ttl_snippet_metadata.png",
-    "fdo_ttl_snippet_metadata.jpg",
     "fdo_ttl_snippet_distributions.svg",
     "fdo_ttl_snippet_distributions.png",
-    "fdo_ttl_snippet_distributions.jpg",
     "fdo_ttl_snippet_links.svg",
     "fdo_ttl_snippet_links.png",
-    "fdo_ttl_snippet_links.jpg",
+    # No .jpg entries: S19 (PRIMER.md) dropped JPG output entirely across
+    # every S8/S17 diagram (fdo_overview, the three ttl-snippet cards) -
+    # PNG+SVG only from here on, so there is nothing left to exclude.
 }
 
 

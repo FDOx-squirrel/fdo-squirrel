@@ -13,20 +13,18 @@ dependencies = [
     "pyyaml",
     "requests",
     "jsonschema",
-    "Pillow",
     "beautifulsoup4",
 ]
 
-# Consumers that only need the crosswalk and cannot render the optional
-# Mermaid preview image (fdo_overview.jpg) do not need this - see the
-# "optional" note in README.md's Output section. Kept out of the base
-# dependency list so `pip install fdo-squirrel` stays lean for callers
-# that only want fdo-metadata.ttl.
+# Pillow removed (S19, PRIMER.md): it was only ever used to convert
+# mmdc's/resvg-py's PNG output into a JPG (fdo_overview.jpg, the three
+# fdo_ttl_snippet_*.jpg cards). Both dropped - PNG+SVG only, everywhere -
+# so nothing in this package imports PIL any more.
 
 [project.optional-dependencies]
 # S8 diagrams (fdo_files_roles*/fdo_md_cff*): rasterises the vendored
 # SVGs to PNG. Same "optional, skipped with a warning if missing" pattern
-# as mmdc for fdo_overview.jpg - the SVGs themselves are written either
+# as mmdc for fdo_overview.png - the SVGs themselves are written either
 # way, only the PNG render needs this.
 diagrams = ["resvg-py>=0.4"]
 

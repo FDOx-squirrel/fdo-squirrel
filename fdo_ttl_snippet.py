@@ -1,6 +1,7 @@
-"""fdo_ttl_snippet.py — small, dark "code card" JPGs showing real excerpts
+"""fdo_ttl_snippet.py — small, dark "code card" PNGs showing real excerpts
 of fdo-metadata.ttl, for dropping straight into a slide (Flo, S8/S15/S16
-nachtrag, PRIMER.md). Three targeted cards instead of one generic one,
+nachtrag, PRIMER.md; JPG output dropped again in S19 - see _rasterise()).
+Three targeted cards instead of one generic one,
 after Flo's feedback on the first version (too little content, resolution
 too soft):
 
@@ -35,7 +36,6 @@ import re
 from fdo_visuals_utils import esc, font_face_css, truncate
 
 CARD_BG = "#161B2E"  # same as INK elsewhere, used here as the card's own background
-CARD_BG_RGB = (0x16, 0x1B, 0x2E)  # same colour, as an (r, g, b) tuple for PIL compositing
 PUNCT = "#7B84A6"
 PREDICATE_COLOR = "#5FD9C7"
 IRI_COLOR = "#8FC1F2"
@@ -321,24 +321,20 @@ def build_links_svg(raw_ttl: str, title: str) -> Optional[Tuple[str, int, int]]:
     return _render_card("Linked Open Data", title, coloured)
 
 
-def _rasterise(svg: str, width: int, height: int, output_png: Path, output_jpg: Path) -> None:
+def _rasterise(svg: str, width: int, height: int, output_png: Path) -> None:
     """Writes a real, alpha-transparent PNG straight from resvg's own
-    bytes (no PIL round-trip needed - resvg already renders PNG), plus a
-    JPG for anyone who wants a flat file for a slide tool that dislikes
-    transparency.
+    bytes (no PIL round-trip needed - resvg already renders PNG).
 
-    The first version only wrote a JPG, built by dropping the alpha
-    channel with `Image.convert("RGB")` - for the card's rounded
-    corners, "dropped" meant "whatever RGB happened to sit under alpha
-    0", which rendered as solid black wedges instead of the intended
-    dark card background (found from Flo's real render, S17 nachtrag,
-    PRIMER.md). The JPG here is composited onto CARD_BG explicitly
-    instead, so the corners come out looking like the corners, not like
-    a rendering bug.
+    Used to also write a flattened JPG for slide tools that dislike
+    transparency, composited onto CARD_BG so the card's rounded corners
+    came out looking like the corners (S17 nachtrag, after an earlier
+    version dropped the alpha channel outright and rendered them as
+    solid black wedges). Flo asked for PNG+SVG only, no JPG, after
+    comparing all three outputs across the real CIIC 81/Freshford runs -
+    the JPG was consistently the largest file for no benefit once PNG
+    already existed (fdo-3d-packager PRIMER.md Teil D). Dropped here.
     """
     import resvg_py
-    from PIL import Image
-    import io
 
     png_bytes = resvg_py.svg_to_bytes(
         svg_string=svg,
@@ -353,19 +349,13 @@ def _rasterise(svg: str, width: int, height: int, output_png: Path, output_jpg: 
     output_png.parent.mkdir(parents=True, exist_ok=True)
     output_png.write_bytes(bytes(png_bytes))
 
-    im = Image.open(io.BytesIO(bytes(png_bytes))).convert("RGBA")
-    flat = Image.new("RGBA", im.size, CARD_BG_RGB + (255,))
-    flat.alpha_composite(im)
-    flat.convert("RGB").save(output_jpg, "JPEG", quality=92)
-
 
 def write_ttl_snippet_cards(ttl_path: Path, title: str, output_dir: Path) -> List[Path]:
-    """Writes three SVG+PNG+JPG card sets (metadata/distributions/links)
-    into output_dir - PNG for a transparent-cornered result consistent
-    with the other S8 diagrams, JPG for anyone who specifically wants a
-    flat file for a slide tool. Returns the list of paths actually
-    written (a card with nothing to show - e.g. no external links found
-    - is skipped, not written empty).
+    """Writes three SVG+PNG card sets (metadata/distributions/links) into
+    output_dir - consistent with the other S8 diagrams (PNG+SVG, no JPG,
+    see _rasterise()). Returns the list of paths actually written (a card
+    with nothing to show - e.g. no external links found - is skipped, not
+    written empty).
     """
     raw_ttl = ttl_path.read_text(encoding="utf-8")
     written: List[Path] = []
@@ -381,14 +371,12 @@ def write_ttl_snippet_cards(ttl_path: Path, title: str, output_dir: Path) -> Lis
         svg, width, height = result
         svg_path = output_dir / f"fdo_ttl_snippet_{name}.svg"
         png_path = output_dir / f"fdo_ttl_snippet_{name}.png"
-        jpg_path = output_dir / f"fdo_ttl_snippet_{name}.jpg"
         svg_path.write_text(svg, encoding="utf-8")
         written.append(svg_path)
         try:
-            _rasterise(svg, width, height, png_path, jpg_path)
+            _rasterise(svg, width, height, png_path)
             written.append(png_path)
-            written.append(jpg_path)
         except ImportError:
-            pass  # resvg-py not installed - SVG still written, PNG/JPG best-effort only
+            pass  # resvg-py not installed - SVG still written, PNG best-effort only
 
     return written

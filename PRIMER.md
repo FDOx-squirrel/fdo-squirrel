@@ -260,6 +260,11 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | TTL-Snippet-als-JPG für Präsentationen (S15) | Automatisch pro Lauf, wie die anderen S8-Diagramme (nicht als separates, manuell aufgerufenes Werkzeug) — Flos Entscheidung | 2026-09-09 |
 | TTL-Snippet-Inhalt nach Flos Test (S16) | Zu wenig Inhalt, zu niedrige Auflösung — Flo wollte "mehr Metadaten" + "Distributions" + hatte offene Frage nach einer dritten Idee. Umgesetzt: drei Karten (Metadata/Distributions/Linked Open Data), 2,5-fache Render-Auflösung | 2026-09-09 |
 | PNG statt/zusätzlich zu JPG für die Snippet-Karten + `fdo_overview` (S17) | Flo fand die abgerundeten Ecken im JPG kaputt (schwarze Keile statt transparent) und wollte PNG für Einheitlichkeit mit den anderen S8-Diagrammen — dazu gleich `fdo_overview.png` neben `.jpg`. Beides umgesetzt, PNG zusätzlich zu JPG (nicht ersetzend) | 2026-09-09 |
+| Scope des "Gesamt-Patch" für die Release-Reife (S18), nachdem `fdo-3d-packager`s eigener Rundlauf drei Lücken fand | Nur die `classification_rules.yaml`-Rollen-Lücke (release-relevant, betrifft jedes 3D-FDO inkl. CIIC-81-Showcase) — Flos eigene Priorisierung. `creators[].id`-Widerspruch bleibt beim schon bestehenden separaten Upstream-Issue (Teil D), JPG/PNG/SVG-Uneinheitlichkeit bleibt kosmetisch für ein Nachgang-Release offen (neu in Teil D) | 2026-09-09 |
+| Reihenfolge S18 vs. S10 vs. `fdo-3d-packager`-Pin-Bump | S18 zuerst (dieser Chat), danach weiterhin wie am 2026-09-09 entschieden: `fdo-3d-packager` in einem eigenen Chat auf den neuen `fdo-squirrel`-HEAD (nach S18) pinnen und frisch durchlaufen lassen, erst danach S10 (Release) hier — bestätigt den S18-Fix zugleich end-to-end gegen die echten CIIC-81-/Freshford-Pakete, die in diesem Chat nicht vorlagen | 2026-09-09 |
+| Scope-Erweiterung: S19 (JPG-Entfernung) und S20 (`creators[].id`) doch noch in diesem Chat, statt wie ursprünglich geplant erst in einem Nachgang-Release | Ja, beide zusätzlich erledigt — Flos Entscheidung, nachdem `conversation_search` bestätigte, dass der für `creators[].id` in `fdo-3d-packager`s Teil D erwähnte "separate Chat" noch nicht existiert bzw. das Issue dort noch nicht angefasst hat (keine Kollision mit paralleler Arbeit). S20 fasst dabei nicht nur `creators`, sondern denselben Schema-Widerspruch bei `contributors`/`publishers` gleich mit an, da alle drei dieselbe `require_id_label()`/`resolve_id_label()`-Funktion teilen | 2026-09-09 |
+| `require_id_label()` umbenennen zu `resolve_id_label()` (S20) | Ja — der alte Name war nach dem Fix (optionales `id`) irreführend. Nur innerhalb `crosswalks/md_cff_crosswalk.py` verwendet, kein öffentlicher Re-Export (`crosswalks/__init__.py` geprüft), also risikoarme Umbenennung | 2026-09-09 |
+| Fallback-IRI-Schema für Agenten ohne `id` (S20) | `urn:fdo-squirrel:agent/<slug-aus-label>`, gleiches Slugify-Muster wie `resolve_dataset_id()` (S13) für MD.cffs eigene `id`, aber als eigene kopierte Funktion statt Import (A3, verhindert außerdem einen Zirkelimport zwischen `crosswalks` und `fdo_rdf.py`) | 2026-09-09 |
 
 ## A5. Was in welchem Chat hochgeladen wird
 
@@ -297,10 +302,18 @@ groß sein (3D-Modelle im Beispielpaket).
 | S12 | fdo-squirrel-registry-Rückflussliste verifizieren + `repository-code`-Org korrigieren | fdo-squirrel | — | **erledigt 2026-09-09** |
 | S13 | Zwei Bugs aus S6/S7 gegen echte Pakete: fehlendes Escaping in Turtle-Literalen, nicht-IRI-förmige `id` bei unveröffentlichten Paketen | fdo-squirrel | S6, S7 | **erledigt 2026-09-09** |
 | S14 | Generator-Version im Output festhalten: PROV-O in der TTL, `generator`-Feld im JSON-Report, neue `FDOx.yaml` als Build-Manifest | fdo-squirrel | — | **erledigt 2026-09-09** |
+| S18 | `classification_rules.yaml` Release-Fix: `.mtl`, `viewer/*` (inkl. `LICENSE.txt`), `data/textures/*` bekommen `model`/`auxiliary` statt der generischen Fallback-Rolle | fdo-squirrel | `fdo-3d-packager`s S7-Fund (build_fdo-Rundlauf) | **erledigt 2026-09-09** |
+| S19 | JPG-Ausgabe entfernen: `fdo_overview.*` + drei `fdo_ttl_snippet_*.*`-Karten nur noch PNG+SVG, Pillow-Abhängigkeit entfernt | fdo-squirrel | `fdo-3d-packager`s S7-Fund (dieselbe Fundstelle wie S18) | **erledigt 2026-09-09** |
+| S20 | `creators[].id` optional machen: `require_id_label()` → `resolve_id_label()`, Fallback-IRI aus `label`, deckt `creators`/`contributors`/`publishers` gleichermaßen ab | fdo-squirrel | `fdo-3d-packager`s S9-Fund | **erledigt 2026-09-09** |
 
 S2, S3, S4 und S5 sind voneinander unabhängig und können in beliebiger
 Reihenfolge angegangen werden. S6, S7, S8 hängen an einem echten Lauf mit
-realen Paketdaten und damit letztlich an `fdo-3d-packager` S10.
+realen Paketdaten und damit letztlich an `fdo-3d-packager` S10. S18, S19
+und S20 hängen nicht an S6-S8 selbst, sondern an deren Nachwirkung: dem
+Fund aus `fdo-3d-packager`s eigenem Rundlauf gegen die heutigen
+`fdo-squirrel`-Outputs. Alle drei in diesem Chat zusammen erledigt (Flos
+Entscheidung, A4) statt wie ursprünglich geplant nur S18 jetzt und S19/S20
+in einem Nachgang-Release.
 
 ---
 
@@ -990,6 +1003,317 @@ seit S2), der Code-Pfad (`shutil.copyfile` vor der JPG-Konvertierung)
 ist aber trivial genug, dass ein Fehlschlag dort unwahrscheinlich ist;
 Flo bestätigt das beim nächsten echten Lauf.
 
+## S18 — classification_rules.yaml Release-Fix (`.mtl`, `viewer/`, `data/textures/`)
+
+**Ziel:** die `fdo:role`-Lücke schließen, die `fdo-3d-packager`s eigener
+Rundlauf (dessen S7 "build_fdo", ein pip-installiertes `fdo-squirrel`
+gegen das volle, selbst gebaute Bundle) an echten CIIC-81-/
+Freshford-Paketen bestätigt hat — vor S10 (Release), Flos eigene
+Priorisierung: dieser Punkt ist release-relevant, weil er jedes von
+`fdo-3d-packager` erzeugte FDO betrifft (inkl. dem CIIC-81-Showcase für
+die Konferenz) und die N4O-KG-Ingestion sowie jede nach `fdo:role`
+filternde SPARQL-Query sonst falsche Rollen für jedes 3D-FDO aus dieser
+Familie sieht. Die beiden anderen aus demselben Fund (`creators[].id`-
+Widerspruch, JPG/PNG/SVG-Uneinheitlichkeit) bleiben bewusst außen vor —
+ersterer ist bereits als eigenständiges Upstream-Issue getrackt (Teil D),
+letzterer ist kosmetisch und kann in einem Nachgang-Release landen (A4).
+
+**Uploads:** Repo-Bundle (A5); kein Upload einer neuen Paketdatei nötig
+— Klon direkt gegen `github.com/FDOx-squirrel/fdo-squirrel` HEAD
+(`bc988a5`) im Chat. Referenzquelle für Fund und Ziel-Layout: `fdo-3d-
+packager`s eigenes `PRIMER.md` Teil D (Eintrag "`classification_rules.
+yaml`-Lücke in `fdo-squirrel`") und dessen `py/step_bundle.py`-Modul-
+Docstring (das dort dokumentierte Ziel-Layout `data/model/`,
+`data/textures/`, `data/images/`, `viewer/`), beide frisch aus
+`github.com/FDOx-squirrel/fdo-3d-packager` HEAD (`610f3b7`) gelesen.
+
+**Substanz:**
+1. **Fund, an echten Paketen bestätigt (`fdo-3d-packager` S7):**
+   `data/model/model.mtl` → `"data"` (keine `.mtl`-Regel existierte);
+   `data/textures/*.jpeg` → `"documentation"` statt `"auxiliary"`;
+   `viewer/*.html`/`.js`/`.css`/`LICENSE.txt` → `"data"` (keine Regel
+   für alle drei). Keine Pipeline-Fehler dabei — `fdo-metadata.ttl` kam
+   in beiden Fällen gültig raus, nur mit der generischen Fallback-Rolle
+   statt der echten.
+2. **Root Cause, zweigeteilt:**
+   a) Fehlende Regeln — für `.mtl` gab es gar keine, für `viewer/*`
+      ebenfalls keine (drei Extensions hätten ohnehin drei einzelne
+      Regeln gebraucht).
+   b) Eine Reihenfolge-/Pfad-Falle bei der bereits existierenden
+      `textures/`-Regel: `_classify_role()`
+      (`fdo/fdo_rdf.py`) geht die Regelliste eines FDO-Typs von oben
+      nach unten durch und nimmt die erste, die passt — die
+      generische Bild-Extension-Regel (`.jpg`/`.jpeg`/… →
+      `documentation`) stand in der Liste VOR der `textures/`-
+      Pfadregel und griff deshalb für jede `.jpeg`-Datei zuerst,
+      unabhängig vom Ordner. Zusätzlich war die Pfadregel selbst ein
+      reiner `str.startswith()`-Test gegen `"textures/"` — das echte
+      Bundle-Layout aus `fdo-3d-packager` legt Texturen aber unter
+      `data/textures/` ab, was diesen Prefix nie erfüllt. Die Regel war
+      damit für Bilddateien faktisch tot, unabhängig vom Ordner.
+3. **Fix, nur `fdo/classification_rules.yaml`, nur der
+   `fdo:3DDataFDO`-Block** (die anderen drei Klassen unverändert):
+   Pfad-basierte Regeln (`data/model/`, `data/textures/`,
+   `data/images/`, `viewer/`) stehen jetzt VOR den generischen
+   Extension-Regeln, sodass Ordner-Zugehörigkeit Vorrang vor der
+   Dateiendung hat. Neue `.mtl`-Regel → `model`. Neue `viewer/`-
+   Pfadregel → `auxiliary`, deckt `.html`/`.js`/`.css`/`LICENSE.txt`
+   (und jede weitere vendorte Viewer-Datei) einheitlich über den Ordner
+   ab, statt drei einzelne Extension-Regeln zu pflegen, die beim
+   nächsten vendorten Dateityp wieder neu fehlen würden.
+   `path_prefix` akzeptiert jetzt sowohl `"data/textures/"` als auch
+   `"textures/"` (und analog für `model/`/`images/`) — rückwärtskompatibel
+   zu einem hypothetischen Top-Level-Layout, nicht nur zum
+   `fdo-3d-packager`-spezifischen. `_classify_role()` selbst
+   (`fdo_rdf.py`) unverändert — reines YAML-Regel-Problem, kein
+   Code-Bug.
+
+**Abnahme:** ein synthetisches Testpaket im echten `fdo-3d-packager`-
+Bundle-Layout (`data/model/{model.obj,model.mtl}`,
+`data/textures/wood.jpeg`, `data/images/preview.png`,
+`viewer/{index.html,app.js,style.css,LICENSE.txt}`, gültiges
+`MD.cff`/`CITATION.cff` mit `creators[].id` gesetzt, um den separat
+getrackten `creators.id`-Bug hier nicht mitzutesten) durch
+`python main.py --package` gejagt; `fdo-metadata.ttl` zeigt für alle
+sechs vorher falsch klassifizierten Dateien die dokumentierte Ziel-
+Rolle, und die unveränderten Fälle (`MD.cff`/`CITATION.cff` →
+`metadata`, `data/model/model.obj` → `model`,
+`data/images/preview.png` → `documentation`) bleiben wie vorher.
+
+### Erledigt 2026-09-09
+
+Wie oben umgesetzt und verifiziert:
+- **Bug reproduziert vor dem Fix:** derselbe Testlauf gegen den
+  ungeänderten `classification_rules.yaml`-Stand zeigt exakt die drei
+  von `fdo-3d-packager` gemeldeten Symptome (`model.mtl` → `data`,
+  `wood.jpeg` → `documentation`, alle vier `viewer/`-Dateien → `data`)
+  — Fund damit nicht nur aus dem anderen Repo übernommen, sondern hier
+  nachvollzogen.
+- **Nach dem Fix, alle sechs korrigiert:** `viewer/app.js` → `auxiliary`,
+  `viewer/style.css` → `auxiliary`, `viewer/index.html` → `auxiliary`,
+  `viewer/LICENSE.txt` → `auxiliary`, `data/model/model.mtl` → `model`,
+  `data/textures/wood.jpeg` → `auxiliary`.
+- **Keine Regression:** `data/model/model.obj` weiterhin `model`,
+  `data/images/preview.png` weiterhin `documentation`,
+  `MD.cff`/`CITATION.cff` weiterhin `metadata`. Die drei unberührten
+  Klassen (`SoftwareFDO`, `AnalysisFDO`, `RegistryFDO`) laden weiterhin
+  fehlerfrei, YAML gegen `yaml.safe_load()` geprüft.
+- **Determinismus (S4) hält:** zwei Läufe gegen dasselbe Testpaket,
+  `fdo-metadata.ttl` bytegleich.
+- **Nicht geprüft:** die echten CIIC-81-/Freshford-Bundle-ZIPs selbst —
+  die sind nicht in diesem Chat hochgeladen und auch nicht in
+  `fdo-3d-packager`s `dist/` committet (leer im frischen Klon); die
+  Verifikation lief stattdessen gegen ein synthetisches Paket, das die
+  reale Ordnerstruktur 1:1 nachbaut (Quelle: `step_bundle.py`s Docstring
+  und `collect_bundle_entries()`/`collect_viewer_files()`). Flo bestätigt
+  den Fix am besten beim nächsten `fdo-3d-packager`-Pin-Bump-Chat gegen
+  die echten Pakete (A4 Reihenfolge-Entscheidung).
+
+## S19 — JPG-Ausgabe entfernen (nur PNG+SVG)
+
+**Ziel:** die zweite, kosmetische Lücke aus demselben `fdo-3d-packager`-
+Fund schließen (Teil D): `fdo_overview.*` und die drei
+`fdo_ttl_snippet_*.*`-Karten schreiben bisher zusätzlich ein `.jpg`,
+während `fdo_files_roles_graph`/`fdo_md_cff`/`fdo_md_cff_graph`
+konsequent nur `.png`+`.svg` bekommen. Flos Wunsch: nur `.png`+`.svg`
+überall, kein `.jpg` mehr — nachdem er S18 als "kann warten"
+eingestuft hatte, jetzt im selben Chat mit erledigt (Flos
+Entscheidung, siehe A4).
+
+**Uploads:** Repo-Bundle (A5).
+
+**Substanz:**
+1. **`fdo_ttl_snippet.py`:** `_rasterise()` schrieb bisher PNG (direkt
+   aus `resvg-py`s Bytes) UND ein zusätzliches JPG (PNG erst mit
+   `PIL.Image.alpha_composite()` auf `CARD_BG` geflacht, dann als JPEG
+   gespeichert). Die JPG-Erzeugung inklusive `PIL`-Import komplett
+   entfernt; `_rasterise()` schreibt jetzt nur noch die PNG.
+   `CARD_BG_RGB` (nur für die PIL-Komposition gebraucht) entfernt,
+   `CARD_BG` (SVG-Hintergrundfarbe, weiterhin gebraucht) bleibt.
+2. **`fdo_finalize.py`:** `render_mermaid_to_jpg()` → umbenannt zu
+   `render_mermaid_to_png()`. `mmdc` liefert PNG ohnehin als
+   Zwischenschritt (`tmp_png`) — die bisherige JPG-Konvertierung war
+   reiner Zusatzaufwand, der jetzt komplett entfällt, inklusive des
+   `PIL`-Imports (nicht mehr gebraucht: `mmdc` liefert PNG direkt,
+   keine Konvertierung nötig).
+3. **`main.py`:** `jpg_path` → `png_path` (`fdo_overview.png` statt
+   `.jpg`), Aufruf auf `render_mermaid_to_png()` umgestellt,
+   `generated_files`-Liste um den doppelten Jpg/Png-Eintrag bereinigt
+   (jetzt nur noch `png_path` einmal).
+4. **`fdo_files_roles_common.py`:** die drei toten
+   `fdo_ttl_snippet_*.jpg`- und den `fdo_overview.jpg`-Eintrag aus
+   `FDO_SQUIRREL_OWN_FILES` entfernt (Filterliste für die "Files and
+   Roles"-Diagramme, damit sie fdo-squirrels eigene Output-Dateien
+   nicht als Paketinhalt zeigen) — nach der JPG-Entfernung nie wieder
+   erreichbar, also aufgeräumt statt als toter Code liegen gelassen.
+5. **`pyproject.toml`/`requirements.txt`:** `Pillow` komplett entfernt.
+   War die einzige `PIL`-Importstelle im ganzen Repo (`grep` bestätigt,
+   nur `fdo_ttl_snippet.py` und `fdo_finalize.py`, beide jetzt
+   JPG-frei) — kein Consumer braucht es mehr.
+6. **`README.md`:** Output-Abschnitt und Setup-Anleitung entsprechend
+   nachgezogen (`fdo_overview.jpg`+`.png` → `fdo_overview.png`,
+   `fdo_ttl_snippet_*.svg`+`.png`+`.jpg` → `.svg`+`.png`, Pillow-
+   Installationshinweis raus).
+7. **Fund während der Umsetzung, nicht vorher bekannt:** `main.py`s
+   eigene Erfolgsmeldung nach `write_ttl_snippet_cards()` filterte
+   bisher auf `.jpg`-Dateien in der Rückgabeliste, um die Karten-Namen
+   auszugeben — nach der JPG-Entfernung liefert dieser Filter immer
+   eine leere Liste, die Meldung hätte also dauerhaft fälschlich
+   "(SVG only, resvg-py missing)" gezeigt, selbst wenn `resvg-py`
+   installiert ist und PNGs erfolgreich geschrieben wurden. Filter auf
+   `.png` umgestellt.
+
+**Abnahme:** `fdo_overview.*` und die drei `fdo_ttl_snippet_*.*`-Karten
+kommen nur noch als `.svg`+`.png` raus, kein `.jpg` mehr im
+Output-Verzeichnis; kein `PIL`-Import mehr irgendwo im Repo;
+Determinismus (S4) hält weiterhin für die PNG-Ausgabe.
+
+### Erledigt 2026-09-09
+
+Wie oben umgesetzt und verifiziert:
+- **Pillow wirklich entfernt, nicht nur aus den Requirements:**
+  `pip uninstall Pillow` + `python -c "import PIL"` → `ModuleNotFoundError`
+  — Pipeline läuft trotzdem fehlerfrei durch (`requirements.txt` neu
+  installiert, ohne Pillow).
+- **Kein `.jpg` mehr im Output, mit und ohne `resvg-py`:** Testpaket
+  einmal mit installiertem `resvg-py` durchlaufen lassen
+  (`fdo_ttl_snippet_*.png` + `fdo_files_roles_graph.png` +
+  `fdo_md_cff*.png` entstehen wie erwartet, `find output -iname
+  "*.jpg"` leer) und einmal ohne (`resvg-py` deinstalliert — SVG-only-
+  Zweig läuft weiterhin sauber durch, kein Absturz).
+- **Meldungs-Fix verifiziert:** mit `resvg-py` zeigt die Konsole jetzt
+  `✔ TTL snippet cards written: fdo_ttl_snippet_metadata.png,
+  fdo_ttl_snippet_distributions.png`, ohne `resvg-py` weiterhin
+  `(SVG only, resvg-py missing)` — beide Fälle einzeln laufen lassen
+  und die Meldung geprüft, nicht nur den Code gelesen.
+- **Determinismus (S4) hält, jetzt auch für die rasterisierten PNGs
+  selbst geprüft** (vorher nie explizit getestet, nur für `fdo-
+  metadata.ttl`): zwei Läufe desselben Testpakets mit `resvg-py`,
+  `cmp` gegen alle fünf PNG-Dateien (`fdo_ttl_snippet_metadata.png`,
+  `_distributions.png`, `fdo_files_roles_graph.png`, `fdo_md_cff.png`,
+  `fdo_md_cff_graph.png`) — alle bytegleich.
+- **Repo-weiter Sweep nach übrig gebliebenen `.jpg`-Referenzen:**
+  `grep -rn ".jpg"` über den ganzen Baum außer `.git`/`__pycache__` —
+  verbleibende Treffer sind alle entweder historische PRIMER.md-
+  Einträge (S17 "Erledigt", die zu Recht beschreiben was *damals* war),
+  die `classification_rules.yaml`-Extension-Liste für *eingehende*
+  Paketdateien (unabhängiges Thema, S18), oder Beispiel-Dateinamen in
+  `fdox_sparql_explorer.html`s Ergebnistabelle (Anzeigedaten, kein
+  Code-Pfad dieses Tools) — kein echter Rest-Treffer.
+- **Nicht geprüft:** `fdo_overview.png` selbst (der `mmdc`-Pfad) — wie
+  schon in S2/S17, `mmdc` läuft in diesem Sandkasten nicht (Puppeteer/
+  Chromium-Start schlägt fehl), der Code-Pfad ist aber jetzt *kürzer*
+  als vorher (keine PIL-Konvertierung mehr, nur noch ein
+  `shutil.copyfile()`), also eher unwahrscheinlicher für einen neuen
+  Fehler als die vorherige Fassung. Flo bestätigt beim nächsten echten
+  Lauf mit `mmdc` verfügbar.
+
+## S20 — `creators[].id` optional machen (Crosswalk vs. eigenes Schema)
+
+**Ziel:** den zweiten, in `fdo-3d-packager`s eigenem PRIMER.md Teil D
+als "eigenständiges Upstream-Issue getrackt" markierten Fund beheben:
+`crosswalks/md_cff_crosswalk.py`s `require_id_label()` verlangte `id`
+für `creators`/`contributors`/`publishers` hart, obwohl das MD.cff-
+Schema (`idLabelEntityOptionalId`) `id` für alle drei ausdrücklich als
+optional führt — jeder echte `--local`-Fetch ohne `--creator-profile`
+crasht dadurch in Produktion, nicht nur eine CI-Fixture (Fund aus
+`fdo-3d-packager`s S9, dort bewusst nicht gefixt, weil "gehört nach
+`fdo-squirrel`, separater Chat").
+
+**Uploads:** Repo-Bundle (A5); vorab per `conversation_search` geprüft,
+ob der in `fdo-3d-packager`s Teil D erwähnte "separate Chat" für dieses
+Issue bereits existiert und das schon gefixt hat — Ergebnis: nein, nur
+dokumentiert, noch nirgends angefasst. Sicher, hier zu fixen, ohne
+Kollision mit paralleler Arbeit.
+
+**Substanz:**
+1. **Root Cause:** `require_id_label(obj, ctx)` warf `ValueError`, wenn
+   `id` fehlte oder leer war — benutzt von `_normalise_agents()`
+   (`creators`, `contributors`) und `_normalise_publishers()`
+   (`publisher`/`publishers`). Alle drei Felder teilen sich denselben
+   Schema-Typ `idLabelEntityOptionalId`, der `id` optional führt — der
+   Widerspruch war also nicht auf `creators` beschränkt, auch wenn nur
+   `creators` bisher real getroffen wurde (Publishers hat in der
+   Praxis immer eine gesetzte Wikidata-ID, Q73901970).
+2. **Fix, eine gemeinsame Funktion für alle drei Felder** (statt einer
+   `creators`-only-Sonderbehandlung, die den Widerspruch bei
+   `contributors`/`publishers` unangetastet gelassen hätte):
+   `require_id_label()` → umbenannt zu `resolve_id_label()` (der alte
+   Name war nach dem Fix irreführend — `id` wird nicht mehr verlangt),
+   verlangt jetzt nur noch ein nicht-leeres `label`. Fehlt `id`, wird
+   eine `urn:fdo-squirrel:agent/<slug>`-IRI aus dem `label` abgeleitet
+   (`re.sub(r"[^A-Za-z0-9._-]", "-", label)`) — derselbe Slugify-
+   Ansatz wie `fdo_rdf.py`s `resolve_dataset_id()` (S13) für MD.cffs
+   eigene `id`, hier aber als eigene, kopierte Funktion (A3: Reuse
+   heißt kopieren, nicht referenzieren — ein echter Import wäre hier
+   zusätzlich ein Zirkelimport gewesen: `fdo_rdf.py` importiert bereits
+   aus `crosswalks`).
+3. **Zusatzfund, während der Umsetzung entdeckt, nicht vorher
+   bekannt:** `_citation_authors_to_idlabel()` (derselbe Datei, der
+   CITATION.cff→Creators-Fallback, wenn MD.cff selbst keine `creators`
+   hat) baute für einen Autor ohne ORCID bisher eine ID der Form
+   `f"name:{name}"` — bei einem Namen mit Leerzeichen (der Normalfall)
+   ergibt das in `<...>` gewrappt eine IRIREF mit Leerzeichen, exakt
+   dieselbe Bug-Klasse, die S13 für MD.cffs eigene `id` schon einmal
+   gefixt hat. Nie gecrasht, weil `fdo_rdf.py` an anderer Stelle
+   (`crosswalk_to_rdf_turtle`, Zeile ~1507) für CITATION.cff-Autoren
+   noch einen dritten, unabhängigen Fallback-Pfad hat
+   (`urn:fdo-squirrel:person/<sha256-hash>`), der in der Praxis meist
+   zuerst greift und diesen Pfad hier maskiert (siehe Abnahme/Erledigt
+   unten) — trotzdem ein echter, latenter Bug in dieser Funktion selbst.
+   Mit demselben Slugify-Muster auf `urn:fdo-squirrel:agent/<slug>`
+   umgestellt, konsistent mit Punkt 2.
+4. **Nicht angefasst:** `fdo_rdf.py`s dritter, unabhängiger
+   `urn:fdo-squirrel:person/<hash>`-Fallback-Pfad für aus CITATION.cff
+   abgeleitete Creators (`derived_creators`, Zeile ~1507–1531) — der
+   crasht nicht (kein `require_id_label()`-Aufruf dort), hat also nie
+   zum gemeldeten Bug beigetragen, und `derived_creators` hat bei
+   vorhandenem CITATION.cff faktisch Vorrang vor `cw.creators` beim
+   finalen TTL-Schreiben (eine bereits bestehende, nicht Teil dieses
+   Fixes zu ändernde Design-Entscheidung). Erwähnt hier nur, damit
+   klar ist, welcher der drei Fallback-Pfade tatsächlich gefixt wurde.
+
+**Abnahme:** ein MD.cff mit `creators: [{label: "..."}]` (kein `id`)
+läuft durch `python main.py --package` durch, ohne `ValueError`; das
+erzeugte `fdo-metadata.ttl` enthält für diesen Creator einen
+`schema:Person`-Knoten mit einer syntaktisch gültigen
+`urn:fdo-squirrel:agent/<slug>`-IRI statt eines Absturzes.
+
+### Erledigt 2026-09-09
+
+Wie oben umgesetzt und an drei synthetischen Testpaketen verifiziert:
+- **Bug zuerst am unveränderten Stand reproduziert**, nicht nur
+  angenommen: derselbe Testfall gegen einen frischen, ungeänderten
+  Klon (`bc988a5`) bricht exakt mit der aus `fdo-3d-packager` bekannten
+  Meldung ab: `ValueError: creators[0] must contain keys 'id' and
+  'label'`, Traceback über `main.py` → `md_cff_to_crosswalk()` →
+  `_normalise_agents()` → `require_id_label()`.
+- **Fall A (MD.cff-Creator ohne `id`, CITATION.cff mit benanntem Autor
+  ohne ORCID):** kein Absturz mehr. TTL zeigt
+  `<urn:fdo-squirrel:person/1ef85dc7cadee6db> a schema:Person` — dieser
+  Fall durchläuft tatsächlich `fdo_rdf.py`s separaten
+  `derived_creators`-Pfad (Punkt 4 oben), nicht `resolve_id_label()`
+  direkt, weil `derived_creators` bei vorhandenem CITATION.cff Vorrang
+  hat. Zeigt trotzdem: der ursprüngliche Absturz kam von der
+  Crosswalk-Build-Phase (`md_cff_to_crosswalk()`), lange bevor
+  `derived_creators` überhaupt zum Zug kommt — ohne den Fix hier wäre
+  dieser Testfall schon vorher abgebrochen (siehe Reproduktion oben).
+- **Fall B (MD.cff-Creator ohne `id`, CITATION.cff ganz ohne
+  `authors`):** `derived_creators` bleibt leer, `creators_to_use`
+  fällt auf `cw.creators` zurück — hier greift `resolve_id_label()`
+  tatsächlich sichtbar im finalen TTL:
+  `<urn:fdo-squirrel:agent/Anne-Karoline-Distel> a schema:Person`.
+- **Keine Regression bei vollständigen Creators:** das S18-Testpaket
+  (`creators[].id` gesetzt) unverändert erfolgreich, gleiche Ausgabe
+  wie vorher.
+- **Determinismus (S4) hält:** beide neuen Testfälle einzeln zweimal
+  gelaufen, `fdo-metadata.ttl` jeweils bytegleich.
+- **Nicht geprüft:** `contributors`/`publishers` ohne `id` an einem
+  echten Paket — beide teilen sich `resolve_id_label()` mit `creators`
+  (Punkt 2), die Korrektheit folgt aus derselben Funktion, aber kein
+  eigener Testfall dafür gebaut, weil in der Praxis (Publishers-
+  Konvention: immer Q73901970) noch nie beobachtet.
+
 ## S9 — README.md auffrischen
 
 **Ziel:** die drei durch S1–S5 entstandenen Diskrepanzen zwischen
@@ -1290,13 +1614,22 @@ nicht sofort wieder veraltet ist (S9 hat genau das kritisiert).
   Eigene Entscheidung, falls gewünscht (A4).
 - **Keine Tests, keine CI** (A1 Befund 5) — nicht bewertet, ob das ein
   Problem ist; einfach noch nie Thema gewesen.
-- **`fdo_overview.jpg` braucht `mmdc`/Node** (A1 Befund 4) — bewusste
-  Abwägung laut README, kein Widerspruch zu lösen.
-- **`require_id_label()` vs. optionales `creators[].id`** — bekannter
-  Widerspruch zwischen `crosswalks/md_cff_crosswalk.py`s Erzwingung von
-  `{id,label}` und dem Schema, das `creators[].id` als optional führt.
-  Wird bereits in einem separaten Chat als eigenständiges Upstream-Issue
-  getrackt — hier nur Querverweis, kein neuer Schritt.
+- **`fdo_overview.png` braucht `mmdc`/Node** (A1 Befund 4, Dateiendung
+  seit S19 `.png` statt `.jpg`) — bewusste Abwägung laut README, kein
+  Widerspruch zu lösen.
+- **Drei unterschiedliche Fallback-IRI-Schemata für Agenten ohne
+  echte `id`** (gefunden während S20): `resolve_id_label()`/
+  `_citation_authors_to_idlabel()` (`crosswalks/md_cff_crosswalk.py`)
+  bauen jetzt `urn:fdo-squirrel:agent/<slug-aus-label>`, während
+  `fdo_rdf.py`s unabhängiger `derived_creators`-Pfad (Zeile ~1507–1531,
+  für aus CITATION.cff abgeleitete Creators ohne ORCID) weiterhin
+  `urn:fdo-squirrel:person/<sha256-hash>` baut — und bei vorhandenem
+  CITATION.cff faktisch Vorrang vor dem `agent/`-Schema hat. Beide
+  syntaktisch gültig, keiner der beiden falsch, aber uneinheitlich, und
+  "person" vs. "agent" als Namensraum-Segment ist auch inhaltlich nicht
+  ganz deckungsgleich. Nicht Teil von S20 (bewusst nicht angefasst,
+  siehe dort Punkt 4) — eigene Entscheidung/eigener Schritt, falls
+  gewünscht.
 - **`fdo-squirrel-registry`s Rückfluss-Liste** (aus deren eigenem PRIMER,
   S10 Punkt 8) wartet ebenfalls auf einen `fdo-squirrel`-Chat: abgekürzte
   Klassen-IRIs, `xsd:integer` an weiteren Zeitgrenzen,

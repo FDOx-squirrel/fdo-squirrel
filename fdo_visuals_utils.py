@@ -103,7 +103,7 @@ def render_svg_to_png(svg_path: Path, png_path: Path, width: int, height: int) -
     """Rasterise via resvg - see fdox-visuals' visuals_utils.py for why
     (single self-contained wheel, no system libcairo/rsvg needed). Optional:
     callers should catch ImportError and skip the PNG, same pattern as
-    render_mermaid_to_jpg's mmdc dependency.
+    render_mermaid_to_png's mmdc dependency.
     """
     import resvg_py
 

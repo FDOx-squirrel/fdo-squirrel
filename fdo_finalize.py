@@ -1,17 +1,22 @@
 """
 Finishing touches for a fdo-squirrel run:
 
-- render_mermaid_to_jpg(): best-effort high-resolution JPG render of the
-  generated fdo_overview.mermaid diagram, via the Mermaid CLI (`mmdc`) plus
-  Pillow for the PNG->JPG conversion. Neither is a hard dependency of the
-  rest of this tool; if either is missing, or rendering fails for any
-  reason, this prints one short, actionable warning and returns None rather
-  than failing the run - the same pattern main.py already uses around the
-  mermaid *text* generation.
+- render_mermaid_to_png(): best-effort high-resolution PNG render of the
+  generated fdo_overview.mermaid diagram, via the Mermaid CLI (`mmdc`).
+  Not a hard dependency of the rest of this tool; if it's missing, or
+  rendering fails for any reason, this prints one short, actionable
+  warning and returns None rather than failing the run - the same
+  pattern main.py already uses around the mermaid *text* generation.
+  Previously rendered a JPG (via Pillow, from mmdc's own PNG output) with
+  PNG kept alongside as a copy of the intermediate file; S19 dropped the
+  JPG entirely (Flo's wish, PRIMER.md - PNG+SVG only across every S8/S17
+  diagram, no JPG) and with it the Pillow dependency this function no
+  longer needs: mmdc already produces PNG directly, so the "conversion"
+  step was pure overhead once the JPG target was removed.
 
 - build_finished_bundle(): package the original source ZIP plus every
   freshly generated companion file (fdo-metadata.ttl, the two modelling
-  reports, the mermaid diagram, its JPG render) into one self-contained
+  reports, the mermaid diagram, its PNG render) into one self-contained
   "finished" ZIP, replacing any stale copies of those same filenames the
   original ZIP already carried. This automates a step that was previously
   done by hand before (re-)publishing a package.
@@ -28,21 +33,18 @@ from pathlib import Path
 from typing import Dict, Iterable, Optional
 
 
-def render_mermaid_to_jpg(
+def render_mermaid_to_png(
     mermaid_path: Path,
-    jpg_path: Path,
+    png_path: Path,
     width: int = 2400,
     height: int = 1600,
     scale: int = 3,
     timeout: int = 120,
 ) -> Optional[Path]:
-    """Render `mermaid_path` to a high-resolution JPG at `jpg_path`, and
-    a same-resolution PNG alongside it (`jpg_path.with_suffix(".png")`) -
-    mmdc renders PNG first regardless, this used to just delete that
-    intermediate file instead of keeping it (Flo wanted PNG output
-    consistent with the S8 diagrams, S17 nachtrag, PRIMER.md).
+    """Render `mermaid_path` to a high-resolution PNG at `png_path` via
+    `mmdc`, which produces PNG natively - no conversion step needed.
 
-    Returns the JPG's output path on success, None if rendering was
+    Returns the PNG's output path on success, None if rendering was
     skipped or failed (a warning is printed either way - never raises).
     """
     if not mermaid_path.exists():
@@ -54,20 +56,11 @@ def render_mermaid_to_jpg(
             "⚠ Mermaid image render skipped: 'mmdc' not found on PATH.\n"
             "   Install Node.js, then run:\n"
             "     npm install -g @mermaid-js/mermaid-cli\n"
-            "   to enable the high-resolution JPG render."
+            "   to enable the high-resolution PNG render."
         )
         return None
 
-    try:
-        from PIL import Image
-    except ImportError:
-        print(
-            "⚠ Mermaid image render skipped: Pillow is not installed.\n"
-            "   Run `pip install Pillow` to enable the PNG->JPG conversion."
-        )
-        return None
-
-    tmp_png = jpg_path.with_suffix(".tmp.png")
+    tmp_png = png_path.with_suffix(".tmp.png")
     tmp_cfg: Optional[Path] = None
     cmd = [
         mmdc,
@@ -93,18 +86,15 @@ def render_mermaid_to_jpg(
     except Exception:
         is_root = False
     if is_root:
-        tmp_cfg = jpg_path.with_suffix(".puppeteer.json")
+        tmp_cfg = png_path.with_suffix(".puppeteer.json")
         tmp_cfg.write_text(json.dumps({"args": ["--no-sandbox"]}), encoding="utf-8")
         cmd += ["--puppeteerConfigFile", str(tmp_cfg)]
 
     try:
         subprocess.run(cmd, check=True, capture_output=True, timeout=timeout)
-        png_path = jpg_path.with_suffix(".png")
         shutil.copyfile(tmp_png, png_path)
-        with Image.open(tmp_png) as im:
-            im.convert("RGB").save(jpg_path, "JPEG", quality=92, optimize=True)
-        print(f"✔ Mermaid diagram rendered as high-res JPG+PNG: {jpg_path}")
-        return jpg_path
+        print(f"✔ Mermaid diagram rendered as high-res PNG: {png_path}")
+        return png_path
     except subprocess.CalledProcessError as e:
         stderr = (e.stderr or b"").decode("utf-8", errors="replace").strip()
         print(f"⚠ Mermaid image render skipped: mmdc failed - {stderr[-500:]}")

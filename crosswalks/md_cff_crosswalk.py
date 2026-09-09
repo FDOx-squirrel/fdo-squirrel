@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any, Dict, List, Tuple, Optional
+import re
 
 
 # --------------------------------------------------
@@ -9,17 +10,46 @@ from typing import Any, Dict, List, Tuple, Optional
 # --------------------------------------------------
 
 
-def require_id_label(obj: Dict[str, Any], ctx: str) -> Tuple[str, str]:
-    """Enforce {id,label} everywhere."""
+def resolve_id_label(obj: Dict[str, Any], ctx: str) -> Tuple[str, str]:
+    """Resolve an {id,label} entity, tolerating a missing/empty `id`.
+
+    The MD.cff schema (`idLabelEntityOptionalId`) marks `id` optional
+    everywhere this is used (creators, contributors, publishers) - only
+    `label` is required. But the returned `id` ends up wrapped directly
+    in `<...>` as an RDF subject IRI further downstream (fdo_rdf.py's
+    agent nodes), so something syntactically valid has to stand in when
+    `id` is genuinely absent, rather than crashing or emitting a broken
+    IRIREF.
+
+    Previously named `require_id_label()` and hard-required `id`,
+    contradicting the schema it was meant to enforce - any real `--local`
+    fetch without `--creator-profile` (fdo-3d-packager's flag for
+    supplying one) hit this in production, not just a synthetic test
+    (found and reported from fdo-3d-packager's own S9, PRIMER.md Teil D).
+
+    Falls back to a urn: built from the label - not a resolvable
+    identifier, but syntactically valid and still traceable to the
+    entity's name. Same pattern as fdo_rdf.py's resolve_dataset_id() for
+    MD.cff's own `id` (A3: reuse means copying, not referencing - the
+    two live in different packages, so the slugify logic is duplicated
+    here on purpose rather than importing across the crosswalks/fdo
+    package boundary, which would create a circular import: fdo_rdf.py
+    already imports from crosswalks).
+    """
     if not isinstance(obj, dict):
         raise ValueError(f"{ctx} must be an object with {{id,label}}, got {type(obj)}")
-    if "id" not in obj or "label" not in obj:
-        raise ValueError(f"{ctx} must contain keys 'id' and 'label'")
-    _id = str(obj["id"]).strip()
+    if "label" not in obj:
+        raise ValueError(f"{ctx} must contain key 'label'")
     label = str(obj["label"]).strip()
-    if not _id or not label:
-        raise ValueError(f"{ctx} requires non-empty 'id' and 'label'")
-    return _id, label
+    if not label:
+        raise ValueError(f"{ctx} requires a non-empty 'label'")
+
+    raw_id = str(obj.get("id") or "").strip()
+    if raw_id:
+        return raw_id, label
+
+    slug = re.sub(r"[^A-Za-z0-9._-]", "-", label) or "unknown"
+    return f"urn:fdo-squirrel:agent/{slug}", label
 
 
 def _citation_authors_to_idlabel(citation: Dict[str, Any]) -> List[Tuple[str, str]]:
@@ -38,7 +68,13 @@ def _citation_authors_to_idlabel(citation: Dict[str, Any]) -> List[Tuple[str, st
         if orcid:
             cid = orcid if orcid.startswith("http") else f"https://orcid.org/{orcid}"
         else:
-            cid = f"name:{name}"
+            # Same urn: fallback as resolve_id_label() above, and for the
+            # same reason: an unescaped "name:Florian Thiery"-style id
+            # wrapped in <...> produces an IRIREF with a space in it,
+            # which is exactly the class of bug S13 already fixed for
+            # MD.cff's own dataset id (PRIMER.md).
+            slug = re.sub(r"[^A-Za-z0-9._-]", "-", name) or "unknown"
+            cid = f"urn:fdo-squirrel:agent/{slug}"
         out.append((cid, name))
     return out
 
@@ -52,7 +88,7 @@ def _normalise_agents(md: Dict[str, Any], key: str) -> List[Tuple[str, str]]:
     for i, a in enumerate(raw):
         if not isinstance(a, dict):
             continue
-        out.append(require_id_label(a, f"{key}[{i}]"))  # (id,label)
+        out.append(resolve_id_label(a, f"{key}[{i}]"))  # (id,label)
     return out
 
 
@@ -66,9 +102,9 @@ def _normalise_publishers(md: Dict[str, Any]) -> List[Tuple[str, str]]:
     pubs: List[Tuple[str, str]] = []
     if isinstance(md.get("publishers"), list):
         for i, p in enumerate(md["publishers"]):
-            pubs.append(require_id_label(p, f"publishers[{i}]"))  # (id,label)
+            pubs.append(resolve_id_label(p, f"publishers[{i}]"))  # (id,label)
     elif isinstance(md.get("publisher"), dict):
-        pubs.append(require_id_label(md["publisher"], "publisher"))
+        pubs.append(resolve_id_label(md["publisher"], "publisher"))
 
     if not pubs:
         raise ValueError(

@@ -92,12 +92,11 @@ Running the pipeline produces, in `output/`:
 - **`fdo_overview.mermaid`**  
   A Mermaid flowchart summarising the FDO (core metadata, distributions by role)
 
-- **`fdo_overview.jpg`+`.png`** *(optional)*  
-  A high-resolution render of the diagram above (both formats — `mmdc`
-  renders PNG first regardless, so the PNG is kept alongside instead of
-  discarded). Needs `mmdc` ([Mermaid CLI](https://github.com/mermaid-js/mermaid-cli))
-  on `PATH` and Pillow installed; if either is missing, this step is
-  skipped with a one-line warning and everything else still runs.
+- **`fdo_overview.png`** *(optional)*  
+  A high-resolution render of the diagram above. Needs `mmdc`
+  ([Mermaid CLI](https://github.com/mermaid-js/mermaid-cli)) on `PATH`;
+  if it's missing, this step is skipped with a one-line warning and
+  everything else still runs.
 
 - **`fdo_files_roles_graph.svg`+`.png`** *(optional PNG)*  
   Which file in the package got which `fdo:role`: each file (or, for a
@@ -114,14 +113,12 @@ Running the pipeline produces, in `output/`:
   group (agents, classification, space & time, heritage object &
   technique).
 
-- **`fdo_ttl_snippet_metadata.svg`+`.png`+`.jpg`**, **`fdo_ttl_snippet_distributions.svg`+`.png`+`.jpg`** and **`fdo_ttl_snippet_links.svg`+`.png`+`.jpg`** *(optional PNG/JPG)*  
+- **`fdo_ttl_snippet_metadata.svg`+`.png`**, **`fdo_ttl_snippet_distributions.svg`+`.png`** and **`fdo_ttl_snippet_links.svg`+`.png`** *(optional PNG)*  
   Three small, dark "code cards" for dropping straight into a slide,
   each showing a real excerpt of `fdo-metadata.ttl` rather than the
   whole file, syntax-coloured, rendered at 2.5x for a crisp result on a
-  slide. PNG has real alpha transparency around the rounded corners
-  (rendered straight from `resvg-py`'s own bytes); JPG is composited
-  onto the card's own dark background instead for a flat file, for
-  slide tools that would rather not deal with transparency:
+  slide. PNG has real alpha transparency around the rounded corners,
+  rendered straight from `resvg-py`'s own bytes:
   - **metadata** — the core dataset block, everything except the two
     lines that are unreadable on a slide anyway (the full distribution
     id list, a JSON-in-a-literal blob).
@@ -135,7 +132,7 @@ Running the pipeline produces, in `output/`:
     is skipped, not written empty, if a given FDO has nothing to show
     for it (e.g. no external links at all).
 
-  All diagram PNGs/JPGs need the optional `resvg-py` extra
+  All diagram PNGs need the optional `resvg-py` extra
   (`pip install fdo-squirrel[diagrams]`); without it, the SVGs are still
   written, just not rasterised. Fonts (Fira Sans) are vendored under
   `fonts/`, same as `fdox-visuals`, so rendering doesn't depend on what's
@@ -190,14 +187,13 @@ needs to change to try a different package.
 
 ### Optional – high-resolution diagram render
 
-`fdo_overview.jpg` needs Node.js plus the Mermaid CLI:
+`fdo_overview.png` needs Node.js plus the Mermaid CLI:
 
 ```bash
 npm install -g @mermaid-js/mermaid-cli
-pip install -r requirements.txt   # picks up Pillow, used for the PNG->JPG step
 ```
 
-The `fdo_files_roles_graph`/`fdo_md_cff*`/`fdo_ttl_snippet` PNGs/JPGs (S8)
+The `fdo_files_roles_graph`/`fdo_md_cff*`/`fdo_ttl_snippet` PNGs (S8)
 need a separate, lighter dependency instead - no Node.js involved:
 
 ```bash
