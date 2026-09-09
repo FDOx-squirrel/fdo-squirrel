@@ -243,6 +243,7 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | Versions-Metadaten stimmten nicht mit der echten Release-Historie überein (S11) | `git tag` zeigt fünf echte Releases bis `v0.3.1` (23.02.2026), aus Arbeit vor diesem PRIMER — `CITATION.cff`/`pyproject.toml`/`README.md` standen aber noch auf `v0.1`/`0.1.0`, bei keinem Tag mitgezogen. Auf `v0.3.1` synchronisiert. Unabhängig von S10 — das war kein neuer Release, nur ein Sync-Fehler bei bereits existierenden | 2026-09-08 |
 | Architektur-Bild-Referenz: eigenes `architecture.png` oder Cross-Repo-Link auf `fdox-visuals`? (S11) | Cross-Repo-Link (`raw.githubusercontent.com/.../fdox-visuals/...`) — Flos Entscheidung, bewusste Ausnahme von A3 "Reuse heißt kopieren, nicht referenzieren". Begründung: Bild dort bereits korrekt und aktuell, eigenes `architecture.png` wartet weiterhin auf lokales `mmdc` (S2). Lokale `architecture.mermaid`/`architecture.png` bleiben im Repo, werden nur von der README nicht mehr eingebunden | 2026-09-08 |
 | Python-Mindestversion (README sagte 3.10, `pyproject.toml` sagt 3.9, Code braucht nachweislich nur 3.9) | README war der Tippfehler, auf 3.9 korrigiert (S9) — Flos Entscheidung | 2026-09-08 |
+| fdo-squirrel-registry-Rückflussliste (5 Punkte, `fdo-squirrel-registry`s PRIMER, S10 Punkt 8) | Alle fünf bereits im Code umgesetzt, empirisch gegen einen echten Lauf bestätigt (S12) — vermutlich in Ad-hoc-Arbeit zwischen dem 2026-09-04-Befund und diesem PRIMER gefixt, nie hier dokumentiert. Kein Code geändert, nur verifiziert | 2026-09-09 |
 
 ## A5. Was in welchem Chat hochgeladen wird
 
@@ -274,6 +275,7 @@ groß sein (3D-Modelle im Beispielpaket).
 | S9 | README.md auffrischen (Python-Version, MD.cff-Feldliste, Status-Abschnitt) | fdo-squirrel | — | **erledigt 2026-09-08** |
 | S10 | Release: Versionsbump + Git-Tag | fdo-squirrel | S6, S7, S8 (A4: Flos Entscheidung, erst wenn alle drei durch sind) | offen |
 | S11 | Versions-Metadaten mit tatsächlicher Release-Historie synchronisieren + Architektur-Bild-Referenz | fdo-squirrel | — | **erledigt 2026-09-08** |
+| S12 | fdo-squirrel-registry-Rückflussliste verifizieren + `repository-code`-Org korrigieren | fdo-squirrel | — | **erledigt 2026-09-09** |
 
 S2, S3, S4 und S5 sind voneinander unabhängig und können in beliebiger
 Reihenfolge angegangen werden. S6, S7, S8 hängen an einem echten Lauf mit
@@ -709,16 +711,75 @@ Cross-Repo-Abhängigkeit später wieder loswerden wollen (z. B. sobald
 stimmt — die Organisation heißt inzwischen `FDOx-squirrel`, nicht mehr
 `Research-Squirrel-Engineers`. Beiläufig aufgefallen bei diesem Schritt,
 nicht Teil des Auftrags, nicht angefasst — neuer Punkt in Teil D.
+*(In S12 geklärt: Redirect funktioniert per GitHub-301, trotzdem auf die
+kanonische URL korrigiert.)*
+
+## S12 — fdo-squirrel-registry-Rückflussliste verifizieren + repository-code korrigieren
+
+**Ziel:** die fünf Punkte aus `fdo-squirrel-registry`s eigenem PRIMER
+(S10, Punkt 8 — "Rückfluss nach fdo-squirrel") abarbeiten, dazu die
+`repository-code`-Org in `CITATION.cff` korrigieren.
+
+**Uploads:** Repo-Bundle (A5); `fdo-squirrel-registry` geklont (read-only,
+nur zum Nachlesen der genauen Befunde, nichts dort verändert).
+
+**Substanz:** Die fünf Punkte aus dem Registry-PRIMER (Befunde 3, 24, 12,
+15, 16 dort):
+
+1. Abgekürzte CRM/CRMdig-Klassen-IRIs (`crm:E73`, `crmdig:D1`, `crmdig:D9`
+   statt der vollen Formen)
+2. Fehlende `rdfs:label` an Wikidata-Konzept- und OSM-Orts-IRIs
+3. `urn:fdo-squirrel:person/<hash>` statt ORCID-IRI, obwohl ORCID vorlag
+4. `xsd:integer` statt eines Datumstyps an Zeitgrenzen
+5. `dcat:bbox` statt `geo:hasBoundingBox`
+
+Dazu: `CITATION.cff`s `repository-code` auf die kanonische
+`FDOx-squirrel`-Org-URL korrigiert (A4).
+
+**Abnahme:** für ein Testpaket mit allen fünf betroffenen Feldern gesetzt
+erzeugt `fdo-metadata.ttl` in jedem der fünf Fälle die vom Registry-Profil
+gewünschte Form.
+
+### Erledigt 2026-09-09
+
+**Alle fünf bereits im Code — nichts zu fixen, nur zu bestätigen.** Ein
+eigens gebautes Testpaket (CIIC-83-Fixture: `heritage_object.material`/
+`object_type` mit Wikidata-IDs, `spatial` mit OSM-ID + `bounding_box`,
+`temporal` mit `start`/`end`, `CITATION.cff`-Autor mit ORCID) durch die
+echte Pipeline laufen lassen und `fdo-metadata.ttl` geprüft:
+
+1. `crmdig:D1_Digital_Object`, `crm:E73_Information_Object`,
+   `crmdig:D9_Data_Object` — voll ausgeschrieben, an allen Stellen.
+2. `<...wikidata.../Q1361864> rdfs:label "Ogham stone" .` und ebenso für
+   `Q159762` — Wikidata-Konzepte bekommen ihr Label.
+3. `<...openstreetmap.../relation/62273> rdfs:label "County Cork,
+   Ireland" .` — OSM-Ort ebenso. Sitzt in `_apply_md_cff_mapping()`s
+   `iri_optional`-Zweig als spatial-Sonderfall (Kommentar im Code
+   erklärt es: "spatial has no {id, label} pairing in the schema - label
+   sits as a sibling field").
+4. `dcat:startDate "0300"^^xsd:gYear`, `dcat:endDate "0699"^^xsd:gYear`.
+5. `geosparql:hasBoundingBox "<...EPSG/0/4326> ENVELOPE(-9.5, -8.0, 52.2,
+   51.4)"^^geosparql:wktLiteral` — `geosparql:` bindet auf dieselbe
+   Namensraum-IRI (`http://www.opengis.net/ont/geosparql#`) wie das
+   Profil-übliche `geo:`; Prefix-Name unterschiedlich, Property
+   identisch. Kein echter Unterschied, nur eine andere Abkürzung dafür.
+6. `dct:creator <https://orcid.org/0000-0002-3246-3531>` — ORCID direkt,
+   keine generierte URN, obwohl der Code bei fehlendem ORCID weiterhin
+   korrekt auf `urn:fdo-squirrel:person/<hash>` zurückfällt.
+
+Vermutlich zwischen dem Registry-Befund (2026-09-04) und diesem PRIMER
+(ab 2026-09-08) in Ad-hoc-Arbeit gefixt, nie in einem `fdo-squirrel`-
+eigenen PRIMER dokumentiert, weil es bis S0 keinen gab. `repository-code`
+korrigiert wie in A4 beschrieben.
+
+**Nicht hier erledigt, gehört in einen `fdo-squirrel-registry`-Chat:**
+Punkt 8 dort als erledigt markieren — das ist ein anderes Repo, hier
+nicht angefasst.
 
 ---
 
 # Teil D — Offene Punkte
 
-- **`CITATION.cff`s `repository-code` zeigt auf die alte Organisation**
-  (`github.com/Research-Squirrel-Engineers/fdo-squirrel`, nicht
-  `github.com/FDOx-squirrel/fdo-squirrel`) — beiläufig in S11
-  aufgefallen, nicht Teil des Auftrags, nicht angefasst. Nicht bewertet,
-  ob das ein alter Redirect ist oder ein echter Fehler.
 - **`example_fdo/MD.cff` ist selbst nicht lauffähig** (neu, gefunden
   während S3): validiert nicht gegen `schemas/md_cff/MD.cff-schema.yaml`
   (`description`/`publishers` fehlen, `keywords`/`license` haben falsche
