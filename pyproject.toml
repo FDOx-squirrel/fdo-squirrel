@@ -27,7 +27,7 @@ dependencies = [
 fdo-squirrel = "main:main"
 
 [tool.setuptools]
-py-modules = ["main", "fdo_mermaid", "fdo_finalize"]
+py-modules = ["main", "fdo_mermaid", "fdo_finalize", "fdo_manifest"]
 packages = ["fdo", "crosswalks", "ingest", "schemas", "schemas.md_cff"]
 
 [tool.setuptools.package-data]

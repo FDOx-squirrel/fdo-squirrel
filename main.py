@@ -9,7 +9,13 @@ from ingest.package_source import load_package_from_source
 from ingest import load_md_cff_schema, validate_against_schema
 from crosswalks import md_cff_to_crosswalk
 from crosswalks.citation_crosswalk_engine import CitationCrosswalkEngine
-from fdo import crosswalk_to_rdf_turtle, build_generated_distributions_ttl, resolve_dataset_id
+from fdo import (
+    crosswalk_to_rdf_turtle,
+    build_generated_distributions_ttl,
+    resolve_dataset_id,
+    fdo_squirrel_version,
+)
+from fdo_manifest import write_fdox_yaml
 from fdo_mermaid import FDOMermaidGenerator
 from fdo_finalize import render_mermaid_to_jpg, build_finished_bundle
 
@@ -438,6 +444,21 @@ def main():
     write_html_report(json_report_path, html_report_path, info)
 
     # --------------------------------------------------
+    # Write FDOx.yaml - a short, human-readable build manifest (S14,
+    # PRIMER.md), distinct from the field-by-field provenance report
+    # above.
+    # --------------------------------------------------
+    fdox_yaml_path = output_dir / "FDOx.yaml"
+    write_fdox_yaml(
+        fdox_yaml_path,
+        cw,
+        json_report_path,
+        info,
+        fdo_squirrel_version(),
+    )
+    print(f"✔ FDOx.yaml written to {fdox_yaml_path}")
+
+    # --------------------------------------------------
     # Write Mermaid overview diagram
     # --------------------------------------------------
     mermaid_path = output_dir / "fdo_overview.mermaid"
@@ -472,7 +493,14 @@ def main():
     # --------------------------------------------------
     generated_files = [
         p
-        for p in (output_path, json_report_path, html_report_path, mermaid_path, jpg_path)
+        for p in (
+            output_path,
+            json_report_path,
+            html_report_path,
+            fdox_yaml_path,
+            mermaid_path,
+            jpg_path,
+        )
         if p.exists()
     ]
     extra_ttl = build_generated_distributions_ttl(

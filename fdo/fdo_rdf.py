@@ -17,6 +17,41 @@ from crosswalks import CrosswalkRecord
 # --------------------------------------------------
 
 
+def fdo_squirrel_version() -> str:
+    """
+    The version of fdo-squirrel itself that produced this output - not
+    part of MD.cff/CITATION.cff, but worth recording so a consumer (or a
+    future fdo-squirrel-registry harvest, or fdo-3d-packager's own pin)
+    can tell which release generated a given fdo-metadata.ttl (Flo,
+    2026-09-09, ahead of the first real release).
+
+    Deliberately static, no timestamp alongside it - a build time here
+    would reintroduce the non-determinism S4 removed.
+    """
+    try:
+        from importlib.metadata import version, PackageNotFoundError
+
+        try:
+            return version("fdo-squirrel")
+        except PackageNotFoundError:
+            pass
+    except ImportError:
+        pass
+    # Fallback for a dev checkout that was never `pip install`-ed under
+    # this name: read pyproject.toml's version line directly. Deliberately
+    # not using tomllib (3.11+ only, requires-python here is >=3.9) or
+    # adding a tomli dependency just for this fallback path.
+    try:
+        pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
+        text = pyproject.read_text(encoding="utf-8")
+        m = re.search(r'(?m)^\s*version\s*=\s*"([^"]+)"', text)
+        if m:
+            return m.group(1)
+    except Exception:
+        pass
+    return "unknown"
+
+
 class ProvenanceTracker:
     """
     Tracks which information was sourced from where for RDF modelling.
@@ -83,6 +118,7 @@ class ProvenanceTracker:
         # the output would make fdo-metadata.ttl non-deterministic
         # across two otherwise-identical runs (found in S4, PRIMER.md).
         return {
+            "generator": {"name": "fdo-squirrel", "version": fdo_squirrel_version()},
             "summary": agg_out,
         }
 
@@ -1359,6 +1395,7 @@ def crosswalk_to_rdf_turtle(
             "@prefix wdt: <http://www.wikidata.org/prop/direct/> .",
             "@prefix crm: <http://www.cidoc-crm.org/cidoc-crm/> .",
             "@prefix crmdig: <http://www.ics.forth.gr/isl/CRMdig/> .",
+            "@prefix prov: <http://www.w3.org/ns/prov#> .",
         ]
     )
 
@@ -1420,6 +1457,7 @@ def crosswalk_to_rdf_turtle(
         f"{subj} a dcat:Dataset, crmdig:D1_Digital_Object, "
         f"crm:E73_Information_Object, {cw_fdo_type} ;"
     )
+    lines.append("    prov:wasGeneratedBy <urn:fdo-squirrel:activity/build> ;")
 
     created = getattr(cw, "created", None)
     issued = getattr(cw, "issued", None)
@@ -1616,13 +1654,32 @@ def crosswalk_to_rdf_turtle(
 
     # Publisher node
     lines.append(f"<{cw.publisher_id}> a schema:Organization ;")
-    lines.append(f'    schema:name "{cw.publisher_label}" .')
+    lines.append(f"    schema:name {_ttl_lit(cw.publisher_label)} .")
     lines.append("")
     tracker.record(
         field="agent.publisher",
         source="MD.cff",
         detail={"publisher_id": cw.publisher_id},
     )
+
+    # Generator activity + agent nodes (S14, PRIMER.md) - which
+    # fdo-squirrel version produced this FDO. Static, no timestamp: a
+    # build time here would reintroduce the non-determinism S4 removed.
+    lines.append("<urn:fdo-squirrel:activity/build> a prov:Activity ;")
+    lines.append(
+        "    prov:wasAssociatedWith <urn:fdo-squirrel:agent/fdo-squirrel> ."
+    )
+    lines.append("")
+    lines.append(
+        "<urn:fdo-squirrel:agent/fdo-squirrel> a prov:SoftwareAgent, "
+        "schema:SoftwareApplication ;"
+    )
+    lines.append('    schema:name "fdo-squirrel" ;')
+    lines.append(f"    schema:softwareVersion {_ttl_lit(fdo_squirrel_version())} ;")
+    lines.append(
+        "    schema:codeRepository <https://github.com/FDOx-squirrel/fdo-squirrel> ."
+    )
+    lines.append("")
 
     # Creator agent nodes
     agent_creators_source = "CITATION.cff" if derived_creators else "MD.cff"

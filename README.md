@@ -81,6 +81,14 @@ Running the pipeline produces, in `output/`:
 - **`rdf_modelling_report.html`**  
   Human-readable HTML version of the modelling report
 
+- **`FDOx.yaml`**  
+  A short, human-readable build manifest: which `fdo-squirrel` version
+  produced this FDO, and — best-effort, structural guess only — which
+  upstream tool likely built the *input* package (e.g. `fdo-3d-packager`,
+  inferred from telltale files like a 3DHOP viewer plus Nexus meshes).
+  Distinct from the modelling report above: this is about how the FDO
+  itself was built, not which source field mapped to which RDF property.
+
 - **`fdo_overview.mermaid`**  
   A Mermaid flowchart summarising the FDO (core metadata, distributions by role)
 

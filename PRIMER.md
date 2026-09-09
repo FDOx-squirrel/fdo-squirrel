@@ -73,6 +73,7 @@ maschinenlesbar, `fdo-squirrel-registry` macht *viele* auffindbar.")
 | `fdo/classification_rules.yaml` | Datei→`fdo:role`-Heuristik (Befund 7, Pfad korrigiert ggü. Entwurf) |
 | `fdo_mermaid.py` | `fdo-metadata.ttl` + `rdf_modelling_report.html` → `fdo_overview.mermaid` (589 Zeilen, tatsächlich importiert) |
 | `fdo_finalize.py` | `render_mermaid_to_jpg()` (braucht `mmdc`/Node, bricht sanft ab wenn fehlt), `build_finished_bundle()` |
+| `fdo_manifest.py` | Neu (S14): schreibt `FDOx.yaml`, ein kurzes Build-Manifest (Generator-Version, strukturelle Vermutung über das erzeugende Upstream-Tool) |
 | `schemas/md_cff/MD.cff-schema.yaml` | Tatsächlich genutztes MD.cff-Schema (JSON Schema draft 2020-12) |
 | `crosswalks/crosswalk.fdo-metadata.yaml` | Regelbasierte CFF/codemeta/schema.org/Wikidata→RDF-Abbildung (22 `cff:`-Quellfelder, siehe Befund 3) |
 | `crosswalks/metadata-crosswalk.py` | Entwicklungswerkzeug zum Bauen/Pflegen des Crosswalk-Graphen; nicht Teil der Laufzeit-Pipeline, aber legitim — kein Aufräum-Kandidat (S5) |
@@ -246,6 +247,7 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | fdo-squirrel-registry-Rückflussliste (5 Punkte, `fdo-squirrel-registry`s PRIMER, S10 Punkt 8) | Alle fünf bereits im Code umgesetzt, empirisch gegen einen echten Lauf bestätigt (S12) — vermutlich in Ad-hoc-Arbeit zwischen dem 2026-09-04-Befund und diesem PRIMER gefixt, nie hier dokumentiert. Kein Code geändert, nur verifiziert | 2026-09-09 |
 | Nicht-IRI-förmige `id` bei unveröffentlichten Paketen (S13) | Fallback-URN aus dem Package-Source-Dateinamen (`urn:fdo-squirrel:unpublished/<slug>`) — Flos Entscheidung. `resolve_dataset_id()` löst das einmal in `main.py` auf, `cw` wird per `dataclasses.replace()` aktualisiert, damit Citation-Crosswalk-Engine und `crosswalk_to_rdf_turtle()` dieselbe ID sehen | 2026-09-09 |
 | `fdo-3d-packager`s Pin auf `fdo-squirrel` bumpen (Commit `504b7af`, 8 Commits hinter HEAD) | Noch nicht gemacht — gehört in einen eigenen `fdo-3d-packager`-Chat, nicht hier mit reingezogen (A3: ein Repo pro Chat). Flo wollte es ursprünglich hier mit erledigen, davon abgeraten | 2026-09-09 |
+| Wie festhalten, welche `fdo-squirrel`-Version ein FDO erzeugt hat? (S14) | Neue `FDOx.yaml` (Build-Manifest, gespeist aus `rdf_modelling_report.json`) + `prov:wasGeneratedBy`/`prov:SoftwareAgent` in der TTL selbst + `generator`-Feld im JSON-Report — Flos Entscheidung. Eine vollständige Toolchain-Datei (mit Blender-/Nexus-Versionen) bleibt außerhalb — das kann nur `fdo-3d-packager` wissen, eigener Chat | 2026-09-09 |
 
 ## A5. Was in welchem Chat hochgeladen wird
 
@@ -279,6 +281,7 @@ groß sein (3D-Modelle im Beispielpaket).
 | S11 | Versions-Metadaten mit tatsächlicher Release-Historie synchronisieren + Architektur-Bild-Referenz | fdo-squirrel | — | **erledigt 2026-09-08** |
 | S12 | fdo-squirrel-registry-Rückflussliste verifizieren + `repository-code`-Org korrigieren | fdo-squirrel | — | **erledigt 2026-09-09** |
 | S13 | Zwei Bugs aus S6/S7 gegen echte Pakete: fehlendes Escaping in Turtle-Literalen, nicht-IRI-förmige `id` bei unveröffentlichten Paketen | fdo-squirrel | S6, S7 | **erledigt 2026-09-09** |
+| S14 | Generator-Version im Output festhalten: PROV-O in der TTL, `generator`-Feld im JSON-Report, neue `FDOx.yaml` als Build-Manifest | fdo-squirrel | — | **erledigt 2026-09-09** |
 
 S2, S3, S4 und S5 sind voneinander unabhängig und können in beliebiger
 Reihenfolge angegangen werden. S6, S7, S8 hängen an einem echten Lauf mit
@@ -888,6 +891,84 @@ dieser Funktion arbeiten, ist dann aber ein No-op (`urn:` matcht schon
 
 **Nicht hier erledigt:** `fdo-3d-packager`s Pin auf `fdo-squirrel`
 bumpen (A4) — anderes Repo, eigener Chat.
+
+## S14 — Generator-Version im Output festhalten
+
+**Ziel:** irgendwo im FDOx-Output soll stehen, welche `fdo-squirrel`-
+Version es erzeugt hat — Flos Anstoß, im Hinblick auf den geplanten
+Release und `fdo-3d-packager`s künftigen Pin darauf.
+
+**Uploads:** Repo-Bundle (A5).
+
+**Substanz (nach Diskussion mit Flo, drei Optionen abgewogen):**
+- Nur RDF (PROV-O) + bestehende Reports — verworfen, Flo wollte eine
+  eigene, direkt lesbare Datei zusätzlich.
+- Eine vollständige Toolchain-Datei (mit Blender-/Nexus-Versionen) hier
+  in `fdo-squirrel` — verworfen: das kann `fdo-squirrel` gar nicht
+  wissen, das lief alles upstream in `fdo-3d-packager`, in einem anderen
+  Prozess.
+- **Gewählt:** eigene `FDOx.yaml` mit `fdo-squirrel`s eigenen Angaben,
+  gespeist aus `rdf_modelling_report.json` statt die Provenance-Trackerei
+  zu duplizieren, plus strukturelle (nicht verifizierte) Vermutung, welches
+  Upstream-Tool das *Eingabe*-Paket gebaut hat — begründet: eine
+  Kombination aus 3DHOP-Viewer + Nexus-Dateien baut in dieser Familie
+  nur `fdo-3d-packager` so.
+
+**Abnahme:** `FDOx.yaml` liegt im Output, enthält `fdo-squirrel`s Name +
+Version; `fdo-metadata.ttl` trägt `prov:wasGeneratedBy` auf einen
+`prov:SoftwareAgent`-Knoten mit derselben Version; beides bleibt
+deterministisch (kein Zeitstempel).
+
+### Erledigt 2026-09-09
+
+**`fdo/fdo_rdf.py`:** neue, öffentliche Funktion `fdo_squirrel_version()`
+— liest `importlib.metadata.version("fdo-squirrel")` (der Normalfall bei
+einer `pip`-Installation, z. B. bei `fdo-3d-packager`s Pin), fällt bei
+`PackageNotFoundError` auf ein direktes Auslesen von `pyproject.toml`s
+`version`-Zeile zurück (Entwicklungs-Checkout ohne Installation unter
+diesem Namen — kein `tomllib`, das bräuchte Python ≥3.11, `requires-
+python` hier ist `>=3.9`). Neuer `prov:`-Prefix; Kern-Dataset bekommt
+`prov:wasGeneratedBy <urn:fdo-squirrel:activity/build>`; neue,
+zeitstempelfreie `prov:Activity`/`prov:SoftwareAgent`-Knoten mit
+`schema:softwareVersion`. `generator`-Feld im JSON-Report ergänzt.
+
+**Dabei noch einen aus S13 übrig gebliebenen Escaping-Fund behoben:**
+der Publisher-Name (`schema:name` am `schema:Organization`-Knoten) war
+beim Durchgehen der S13-Liste übersehen worden — jetzt auch auf
+`_ttl_lit()` umgestellt.
+
+**`fdo_manifest.py` (neu):** schreibt `FDOx.yaml`. Liest
+`rdf_modelling_report.json` zurück (statt die Provenance-Trackerei zu
+duplizieren) für die Liste der gesehenen Quellen; öffnet das Original-
+ZIP (`info["package_local_path"]`) und prüft strukturell auf
+`viewer/index.html` + `viewer/js/nexus.js` + `.nxs`/`.nxz`-Dateien —
+trifft das zu, `likely_built_by: fdo-3d-packager` mit
+`likely_built_by_confidence: heuristic` und einer Begründung, sonst
+`null`/`unknown`. In `pyproject.toml`s `py-modules` ergänzt (sonst fehlt
+es im echten `pip install`).
+
+**`main.py`:** ruft `write_fdox_yaml()` nach dem HTML-Report auf,
+`FDOx.yaml` landet in `generated_files` und wird wie jede andere
+generierte Datei zu einer `dcat:Distribution` und Teil des fertigen
+Bundles.
+
+**Verifiziert:**
+- Gegen beide echten Pakete (Freshford, CIIC 81): `FDOx.yaml` valides
+  YAML (`yaml.safe_load`), `generator.version` korrekt `0.3.1`.
+- Erkennungs-Heuristik anfangs mit einem eigenen Testpaket ohne
+  `viewer/` geprüft (versehentlich, aus der S6/S7-Extraktion) —
+  `likely_built_by: null`, korrekt, da das Testpaket die Struktur
+  nicht hatte. Mit `viewer/` erneut gebaut: `likely_built_by:
+  fdo-3d-packager` korrekt erkannt.
+- `rdflib` parst beide TTLs weiterhin sauber (jetzt 204/194 Tripel,
+  vorher 187/177 — die neuen `prov:`-Tripel kommen dazu).
+- Determinismus (S4) hält für alle drei Ausgabedateien inkl.
+  `FDOx.yaml` **und** das fertige Bundle-ZIP selbst — zwei Läufe,
+  `fdo-metadata.ttl`, `FDOx.yaml`, `<slug>-fdo-bundle.zip` alle
+  bytegleich.
+
+**README.md** um `FDOx.yaml` im Output-Abschnitt ergänzt, damit sie
+nicht sofort wieder veraltet ist (S9 hat genau das kritisiert).
 
 ---
 
