@@ -3,12 +3,13 @@ import argparse
 import json
 import html
 import re
+import dataclasses
 
 from ingest.package_source import load_package_from_source
 from ingest import load_md_cff_schema, validate_against_schema
 from crosswalks import md_cff_to_crosswalk
 from crosswalks.citation_crosswalk_engine import CitationCrosswalkEngine
-from fdo import crosswalk_to_rdf_turtle, build_generated_distributions_ttl
+from fdo import crosswalk_to_rdf_turtle, build_generated_distributions_ttl, resolve_dataset_id
 from fdo_mermaid import FDOMermaidGenerator
 from fdo_finalize import render_mermaid_to_jpg, build_finished_bundle
 
@@ -394,6 +395,15 @@ def main():
     # Crosswalk: MD.cff → internal FDO record
     # --------------------------------------------------
     cw = md_cff_to_crosswalk(md, citation=cff)
+
+    # MD.cff's id might not be a real IRI yet (fdo-3d-packager's own
+    # placeholder for a package pending a Zenodo DOI) - resolve it once,
+    # here, so the citation crosswalk below and crosswalk_to_rdf_turtle()
+    # both end up using the exact same subject instead of two different
+    # ones (found in S13/S6-S7, PRIMER.md).
+    resolved_id = resolve_dataset_id(cw.id, info.get("package_source", ""))
+    if resolved_id != cw.id:
+        cw = dataclasses.replace(cw, id=resolved_id)
 
     # --------------------------------------------------
     # Crosswalk: CITATION.cff → RDF triples

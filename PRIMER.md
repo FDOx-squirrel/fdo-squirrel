@@ -244,6 +244,8 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | Architektur-Bild-Referenz: eigenes `architecture.png` oder Cross-Repo-Link auf `fdox-visuals`? (S11) | Cross-Repo-Link (`raw.githubusercontent.com/.../fdox-visuals/...`) — Flos Entscheidung, bewusste Ausnahme von A3 "Reuse heißt kopieren, nicht referenzieren". Begründung: Bild dort bereits korrekt und aktuell, eigenes `architecture.png` wartet weiterhin auf lokales `mmdc` (S2). Lokale `architecture.mermaid`/`architecture.png` bleiben im Repo, werden nur von der README nicht mehr eingebunden | 2026-09-08 |
 | Python-Mindestversion (README sagte 3.10, `pyproject.toml` sagt 3.9, Code braucht nachweislich nur 3.9) | README war der Tippfehler, auf 3.9 korrigiert (S9) — Flos Entscheidung | 2026-09-08 |
 | fdo-squirrel-registry-Rückflussliste (5 Punkte, `fdo-squirrel-registry`s PRIMER, S10 Punkt 8) | Alle fünf bereits im Code umgesetzt, empirisch gegen einen echten Lauf bestätigt (S12) — vermutlich in Ad-hoc-Arbeit zwischen dem 2026-09-04-Befund und diesem PRIMER gefixt, nie hier dokumentiert. Kein Code geändert, nur verifiziert | 2026-09-09 |
+| Nicht-IRI-förmige `id` bei unveröffentlichten Paketen (S13) | Fallback-URN aus dem Package-Source-Dateinamen (`urn:fdo-squirrel:unpublished/<slug>`) — Flos Entscheidung. `resolve_dataset_id()` löst das einmal in `main.py` auf, `cw` wird per `dataclasses.replace()` aktualisiert, damit Citation-Crosswalk-Engine und `crosswalk_to_rdf_turtle()` dieselbe ID sehen | 2026-09-09 |
+| `fdo-3d-packager`s Pin auf `fdo-squirrel` bumpen (Commit `504b7af`, 8 Commits hinter HEAD) | Noch nicht gemacht — gehört in einen eigenen `fdo-3d-packager`-Chat, nicht hier mit reingezogen (A3: ein Repo pro Chat). Flo wollte es ursprünglich hier mit erledigen, davon abgeraten | 2026-09-09 |
 
 ## A5. Was in welchem Chat hochgeladen wird
 
@@ -269,13 +271,14 @@ groß sein (3D-Modelle im Beispielpaket).
 | S3 | CITATION.cff-Datenverlust entscheiden + fixen (Option a) | fdo-squirrel | S0 | **erledigt 2026-09-08** (17 von 22 Feldern; 5 bleiben ohne `to_term`, neuer Offener Punkt in Teil D) |
 | S4 | Determinismus prüfen + fixen (zwei Läufe, `fdo-metadata.ttl` vergleichen) | fdo-squirrel | S0 | **erledigt 2026-09-08** (drei Nichtdeterminismus-Quellen gefunden und gefixt) |
 | S5 | Aufräumen: `fdo_mermaid_old.py`, Root-`MD.cff.schema.yaml` (A1 Befund 2b/8) | fdo-squirrel | S0 | **erledigt 2026-09-08** (beide gelöscht, `crosswalks/metadata-crosswalk.py` bleibt — ist kein Aufräum-Kandidat, siehe Teil D) |
-| S6 | CIIC 81 real durchlaufen lassen, sobald `fdo-3d-packager` reale `MD.cff`/`CITATION.cff` liefert | fdo-squirrel | `fdo-3d-packager` S10 (laut Parallel-Chat heute erledigt — hier noch zu prüfen) | offen |
-| S7 | Freshford Holy Well (`freshford-st-lachtains-well-low-poly`) ebenso | fdo-squirrel | S6 | offen |
-| S8 | Instanz-Diagramme aus einem echten Lauf: "MD.cff ausgefüllt", "Files and Roles" (Muster: `fdo_mermaid.py`) | fdo-squirrel | S6 (braucht einen echten Lauf zum Testen) | offen |
+| S6 | CIIC 81 real durchlaufen lassen | fdo-squirrel | `fdo-3d-packager` S10 | **erledigt 2026-09-09** |
+| S7 | Freshford Holy Well (`freshford-st-lachtains-well-low-poly`) ebenso | fdo-squirrel | S6 | **erledigt 2026-09-09** |
+| S8 | Instanz-Diagramme aus einem echten Lauf: "MD.cff ausgefüllt", "Files and Roles" (Muster: `fdo_mermaid.py`) | fdo-squirrel | S6 (Blocker jetzt weg, echte Läufe liegen vor) | offen |
 | S9 | README.md auffrischen (Python-Version, MD.cff-Feldliste, Status-Abschnitt) | fdo-squirrel | — | **erledigt 2026-09-08** |
-| S10 | Release: Versionsbump + Git-Tag | fdo-squirrel | S6, S7, S8 (A4: Flos Entscheidung, erst wenn alle drei durch sind) | offen |
+| S10 | Release: Versionsbump + Git-Tag | fdo-squirrel | S8 (A4: Flos Entscheidung, S6/S7 sind jetzt durch) | offen |
 | S11 | Versions-Metadaten mit tatsächlicher Release-Historie synchronisieren + Architektur-Bild-Referenz | fdo-squirrel | — | **erledigt 2026-09-08** |
 | S12 | fdo-squirrel-registry-Rückflussliste verifizieren + `repository-code`-Org korrigieren | fdo-squirrel | — | **erledigt 2026-09-09** |
+| S13 | Zwei Bugs aus S6/S7 gegen echte Pakete: fehlendes Escaping in Turtle-Literalen, nicht-IRI-förmige `id` bei unveröffentlichten Paketen | fdo-squirrel | S6, S7 | **erledigt 2026-09-09** |
 
 S2, S3, S4 und S5 sind voneinander unabhängig und können in beliebiger
 Reihenfolge angegangen werden. S6, S7, S8 hängen an einem echten Lauf mit
@@ -589,26 +592,68 @@ PATCH-README aufgeführt** (`git rm`), nicht im ZIP selbst.
 erzeugtes Paket (CIIC 81 Ogham Stone) laufen lassen, statt gegen
 Platzhalterdaten.
 
-**Uploads (Vorschlag):** das von `fdo-3d-packager` erzeugte
-`<slug>-fdo-bundle.zip` oder `dist/<slug>/` für CIIC 81.
+**Uploads:** `cork-ogham-stone-ciic-81-ucc-4-fdo-bundle_trim.zip` (von
+Flo aus `fdo-3d-packager`s echtem Lauf hochgeladen, `model.obj`/
+`model.nxs` schon rausgetrimmt).
 
-**Substanz:** hängt an `fdo-3d-packager` S10 (lokale MD.cff/CITATION.cff-
-Overrides) — laut Parallel-Chat heute committet und gepusht, hier aber
-nicht verifiziert (anderes Repo, siehe A4). Im nächsten `fdo-squirrel`-
-Chat: prüfen, ob ein reales CIIC-81-Bundle bereits vorliegt oder erst
-erzeugt werden muss.
+**Substanz:** `MD.cff`/`CITATION.cff`/`data/` aus dem Upload
+extrahiert (die von `fdo-3d-packager`s eigenem `build_fdo`-Schritt schon
+mitgelieferten `fdo-squirrel`-Outputs — `fdo-metadata.ttl` etc. —
+bewusst nicht übernommen, siehe Nachtrag), neu gezippt, durch den
+heutigen `fdo-squirrel`-HEAD laufen lassen.
 
 **Abnahme:** `fdo-metadata.ttl` für CIIC 81 enthält reale Wikidata-
 Objekttyp-/Material-Werte, OSM-Spatial-ID, ChronOntology-Periode statt
 Platzhalter.
 
+### Erledigt 2026-09-09
+
+**Wichtiger Fund vor dem eigentlichen Lauf:** `fdo-3d-packager`s
+`requirements.txt` pinnt `fdo-squirrel` auf Commit `504b7af` — acht
+Commits hinter dem heutigen HEAD, komplett vor diesem PRIMER (siehe
+A4). Das in Flos Upload bereits eingebettete `fdo-metadata.ttl` spiegelt
+also nicht die heutige Arbeit. Deshalb: rohes `MD.cff`/`CITATION.cff`/
+`data/` aus dem Bundle gezogen und selbst nochmal durch den aktuellen
+`fdo-squirrel`-Stand laufen lassen, statt dem mitgelieferten `ttl` zu
+vertrauen.
+
+Abnahme erfüllt: `dct:type`/`dct:subject` zeigen auf echte Wikidata-Q-IDs
+(`Q2016147` "Inscribed Ogham stone", `Q22731` "Stone", `Q121592049`),
+`dct:spatial` auf einen echten OSM-Node
+(`openstreetmap.org/node/11071361392`), `owl:sameAs` auf eine echte
+ChronOntology-Periode. Diff gegen das alte, mit Commit `504b7af`
+gebaute `ttl` zeigt den konkreten Effekt von S3: drei neue Tripel,
+`schema:author "Anne-Karoline Distel"`, `schema:author "Florian
+Thiery"`, `schema:datePublished "2024-06-05"` — vorher fehlten Creators
+und Datum aus `CITATION.cff` komplett, jetzt sind sie da.
+
+Beim Durchlaufen zwei echte Bugs gefunden, siehe S13 — CIIC 81 selbst
+war davon nicht betroffen (hat schon eine echte DOI als `id`), aber der
+Escaping-Bug ist ein allgemeiner Code-Fehler, keine Paket-Eigenheit.
+
 ## S7 — Freshford Holy Well
 
 **Ziel:** wie S6, für `freshford-st-lachtains-well-low-poly`.
 
-**Uploads (Vorschlag):** wie S6.
+**Uploads:** `freshford-st-lachtains-well-low-poly-fdo-bundle.zip` (Flos
+Upload, ungetrimmt).
 
 **Abnahme:** wie S6, für das Freshford-Paket.
+
+### Erledigt 2026-09-09
+
+Wie S6: rohes `MD.cff`/`CITATION.cff`/`data/` extrahiert, durch den
+heutigen `fdo-squirrel`-Stand laufen lassen. `dct:subject` zeigt auf
+echte Wikidata-Q-IDs (`Q229370`, `Q110840`); Freshford hat kein
+`temporal`/OSM-`spatial` in seinem `MD.cff`, insofern dazu nichts zu
+prüfen.
+
+**Das ist das Paket, das beide S13-Bugs tatsächlich aufgedeckt hat:**
+Freshford hat noch keine Zenodo-DOI (`id` ist `fdo-3d-packager`s
+Platzhaltertext) und eine mehrzeilige, aus Sketchfab importierte
+`description` — beides kommt bei CIIC 81 so nicht vor. Ohne ein zweites,
+noch unveröffentlichtes Paket wie dieses wären beide Bugs synthetischen
+Tests vermutlich weiter entgangen.
 
 ## S8 — Instanz-Diagramme (Vorschlag)
 
@@ -775,6 +820,74 @@ korrigiert wie in A4 beschrieben.
 **Nicht hier erledigt, gehört in einen `fdo-squirrel-registry`-Chat:**
 Punkt 8 dort als erledigt markieren — das ist ein anderes Repo, hier
 nicht angefasst.
+
+## S13 — Zwei Bugs aus S6/S7 gegen echte Pakete
+
+**Ziel:** die beiden beim echten Durchlaufen von CIIC 81 und Freshford
+gefundenen Bugs beheben.
+
+**Uploads:** Repo-Bundle (A5).
+
+**Substanz:**
+
+1. **Fehlendes Escaping in mehreren `fdo_rdf.py`-Literalen.** `dct:title`,
+   `dct:description`, `dct:hasVersion`, `dct:identifier`, `dct:created`,
+   `dct:issued`, `dct:modified`, Keyword-Literale, Creator-Namen und die
+   Distribution-Felder (`dcat:mediaType`/`fdo:path`/`fdo:role`) wurden
+   direkt per f-String in die Turtle-Ausgabe eingebettet, ohne durch
+   `_ttl_lit()`/`_ttl_escape()` zu laufen — obwohl diese Hilfsfunktionen
+   längst existieren und an anderen Stellen korrekt benutzt werden.
+2. **`id` in `MD.cff` ist nicht immer eine echte IRI.** `fdo-3d-packager`
+   trägt für unveröffentlichte Pakete einen Platzhaltersatz statt einer
+   DOI ein (`'TODO: id not set (pending Zenodo DOI, see PRIMER.md A4)'`)
+   — `fdo-squirrel` wickelte den unvalidiert in `<...>`, was einen
+   IRIREF mit Leerzeichen ergibt.
+
+**Abnahme:** ein Testpaket mit einer mehrzeiligen `description` und ein
+Paket ohne echte `id` erzeugen beide gültiges, mit `rdflib` strikt
+parsbares Turtle.
+
+### Erledigt 2026-09-09
+
+**Bug 1 (Escaping) — gefunden, weil Freshfords `description` echte
+Newlines enthält** (aus Sketchfab importierter Fließtext: "...floating
+in there for a while.\n\nWikidata: Q121840779\n\n..."). Vor dem Fix
+scheiterte `rdflib.Graph().parse()` an dieser Datei komplett
+(`BadSyntax: newline found in string literal`) — kein Kantenfall,
+sondern ein Totalausfall für jedes Paket mit mehrzeiligem Freitext.
+Alle neun betroffenen Stellen auf `_ttl_lit()` umgestellt.
+
+**Bug 2 (id-Validierung) — Flos Entscheidung: Fallback-URN aus dem
+Slug.** Neue, exportierte Funktion `resolve_dataset_id(cw_id,
+package_source)` in `fdo/fdo_rdf.py`: prüft mit der schon vorhandenen
+`_is_iri()`, ob `cw_id` wie eine IRI aussieht; wenn nicht, baut
+`urn:fdo-squirrel:unpublished/<sanitierter-Dateiname-ohne-Endung>`.
+**Wichtig, erst beim zweiten Anlauf richtig:** die Citation-Crosswalk-
+Engine bekommt ihr Subject in `main.py` (`engine.crosswalk(cff, cw.id)`)
+**vor** dem Aufruf von `crosswalk_to_rdf_turtle()` — ein Fix nur in
+`fdo_rdf.py` hätte zwei verschiedene Subjects im selben File erzeugt
+(Kern-Dataset-Block unter der neuen URN, alle Citation-Crosswalk-Tripel
+weiter unter dem alten Platzhaltertext). Deshalb `main.py`: `cw.id`
+direkt nach `md_cff_to_crosswalk()` per `dataclasses.replace()` einmal
+aufgelöst (`CrosswalkRecord` ist `frozen=True`), bevor die Engine läuft
+— `crosswalk_to_rdf_turtle()` behält seinen eigenen Aufruf von
+`resolve_dataset_id()` als Sicherheitsnetz für Aufrufer, die direkt mit
+dieser Funktion arbeiten, ist dann aber ein No-op (`urn:` matcht schon
+`_is_iri()`).
+
+**Verifiziert, gegen beide echten Pakete:**
+- `rdflib.Graph().parse(..., format='turtle')` läuft für beide sauber
+  durch, 0 Warnungen (vorher: Freshford Totalausfall, dazu 38 `rdflib`-
+  Warnungen "does not look like a valid URI" nach dem ersten,
+  unvollständigen Fix-Versuch).
+- `grep -c "TODO: id not set"` → 0 in der Freshford-Ausgabe.
+- Determinismus (S4) hält weiter: zwei Läufe gegen dasselbe
+  Freshford-Paket, `fdo-metadata.ttl` bytegleich.
+- CIIC 81 unverändert: `_is_iri()` erkennt die echte DOI korrekt, kein
+  Fallback ausgelöst.
+
+**Nicht hier erledigt:** `fdo-3d-packager`s Pin auf `fdo-squirrel`
+bumpen (A4) — anderes Repo, eigener Chat.
 
 ---
 

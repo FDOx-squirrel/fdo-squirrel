@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List, Optional, Dict, Any, Tuple
 from pathlib import Path
 import mimetypes
+import re
 import yaml
 import zipfile
 import hashlib
@@ -1240,7 +1241,7 @@ def _postprocess_citation_triples(
     # Emit dcat:keyword and dct:subject literals (equivalents)
     for s, kws in keyword_literals.items():
         for kw in sorted(kws):
-            lit = f'"{kw}"'
+            lit = _ttl_lit(kw)
             add(f"{s} dcat:keyword {lit} .")
             add(f"{s} dct:subject {lit} .")
             if tracker:
@@ -1267,6 +1268,29 @@ def _postprocess_citation_triples(
 # --------------------------------------------------
 # RDF writer
 # --------------------------------------------------
+
+
+def resolve_dataset_id(cw_id: str, package_source: str) -> str:
+    """
+    Resolve MD.cff's `id` to something safe to wrap in `<...>` as the FDO's
+    own subject IRI - and to hand to the citation crosswalk engine as the
+    triple subject, so both stay the same identifier.
+
+    MD.cff's `id` isn't always a resolvable IRI: fdo-3d-packager's own
+    placeholder convention for a package that hasn't been published to
+    Zenodo yet (no DOI assigned) is a human-readable sentence, not a URI.
+    Wrapping that in <> produces an IRIREF with a space in it, which some
+    Turtle consumers accept with a warning and others reject outright
+    (found in S13/S6-S7, PRIMER.md, against real unpublished packages).
+    Falls back to a URN built from the package source's filename stem
+    instead - not a real, resolvable identifier either, but syntactically
+    valid and still traceable to the package it came from.
+    """
+    if _is_iri(cw_id):
+        return cw_id
+    slug_raw = Path(str(package_source)).stem or "unknown"
+    slug = re.sub(r"[^A-Za-z0-9._-]", "-", slug_raw)
+    return f"urn:fdo-squirrel:unpublished/{slug}"
 
 
 def crosswalk_to_rdf_turtle(
@@ -1338,7 +1362,14 @@ def crosswalk_to_rdf_turtle(
         ]
     )
 
-    subj = f"<{cw_id}>"
+    resolved_id = resolve_dataset_id(cw_id, info.get("package_source", ""))
+    subj = f"<{resolved_id}>"
+    if resolved_id != cw_id:
+        tracker.record(
+            field="dataset.id.fallback",
+            source="fdo-squirrel",
+            detail={"original_id": cw_id, "fallback_id": resolved_id},
+        )
 
     tracker.record(
         field="dataset.id",
@@ -1398,12 +1429,12 @@ def crosswalk_to_rdf_turtle(
     identifier = getattr(cw, "identifier", None) or getattr(cw, "fdo_id", None)
 
     if created:
-        lines.append(f'    dct:created "{created}"^^xsd:date ;')
+        lines.append(f"    dct:created {_ttl_lit(created, datatype='xsd:date')} ;")
         tracker.record(
             field="dataset.created", source="MD.cff", detail={"created": created}
         )
     if description:
-        lines.append(f'    dct:description "{description}" ;')
+        lines.append(f"    dct:description {_ttl_lit(description)} ;")
         tracker.record(
             field="dataset.description",
             source="MD.cff",
@@ -1413,24 +1444,24 @@ def crosswalk_to_rdf_turtle(
             },
         )
     if version:
-        lines.append(f'    dct:hasVersion "{version}" ;')
+        lines.append(f"    dct:hasVersion {_ttl_lit(version)} ;")
         tracker.record(
             field="dataset.version", source="MD.cff", detail={"version": version}
         )
     if identifier:
-        lines.append(f'    dct:identifier "{identifier}" ;')
+        lines.append(f"    dct:identifier {_ttl_lit(identifier)} ;")
         tracker.record(
             field="dataset.identifier",
             source="MD.cff",
             detail={"identifier": identifier},
         )
     if issued:
-        lines.append(f'    dct:issued "{issued}"^^xsd:date ;')
+        lines.append(f"    dct:issued {_ttl_lit(issued, datatype='xsd:date')} ;")
         tracker.record(
             field="dataset.issued", source="MD.cff", detail={"issued": issued}
         )
     if modified:
-        lines.append(f'    dct:modified "{modified}"^^xsd:date ;')
+        lines.append(f"    dct:modified {_ttl_lit(modified, datatype='xsd:date')} ;")
         tracker.record(
             field="dataset.modified", source="MD.cff", detail={"modified": modified}
         )
@@ -1523,7 +1554,7 @@ def crosswalk_to_rdf_turtle(
 
     # Publisher / title
     lines.append(f"    dct:publisher <{cw.publisher_id}> ;")
-    lines.append(f'    dct:title "{cw_title}" ;')
+    lines.append(f"    dct:title {_ttl_lit(cw_title)} ;")
     tracker.record(
         field="dataset.publisher",
         source="MD.cff",
@@ -1597,7 +1628,7 @@ def crosswalk_to_rdf_turtle(
     agent_creators_source = "CITATION.cff" if derived_creators else "MD.cff"
     for cid, clabel in creators_to_use:
         lines.append(f"<{cid}> a schema:Person ;")
-        lines.append(f'    schema:name "{clabel}" .')
+        lines.append(f"    schema:name {_ttl_lit(clabel)} .")
         lines.append("")
         tracker.record(
             field="agent.creator",
@@ -1626,9 +1657,9 @@ def crosswalk_to_rdf_turtle(
                 count_inc=1,
             )
 
-        lines.append(f'    dcat:mediaType "{mt}" ;')
-        lines.append(f'    fdo:path "{name}" ;')
-        lines.append(f'    fdo:role "{role}" ;')
+        lines.append(f"    dcat:mediaType {_ttl_lit(mt)} ;")
+        lines.append(f"    fdo:path {_ttl_lit(name)} ;")
+        lines.append(f"    fdo:role {_ttl_lit(role)} ;")
 
         if isinstance(sha256_hex, str) and len(sha256_hex) >= 64:
             lines.append(f'    fdo:sha256 "{sha256_hex}" ;')
