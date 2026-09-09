@@ -268,6 +268,8 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | `fdo_mermaid.py`s Selbstausschluss-Filter (S21): eigene Extension-Liste behalten oder `FDO_SQUIRREL_OWN_FILES` importieren? | Import aus `fdo_files_roles_common.py` — kein Zirkelimport-Risiko, und zwei unabhängig gepflegte Ausschlusslisten für denselben Zweck waren genau das Muster, das den `viewer/index.html`-Bug erst entstehen ließ. A3s "Reuse heißt kopieren" gilt repo-übergreifend, nicht für normale Imports innerhalb desselben Pakets | 2026-09-09 |
 | Stale Teil-D-Eintrag "`fdo-squirrel-registry`s Rückfluss-Liste" entfernen (bereits in S12 erledigt, aber nie aus Teil D rausgenommen) | Ja, beim S21-Patch mit erledigt — reiner Dokumentationsfehler, kein Code betroffen | 2026-09-09 |
 | `?`-Platzhalter in der Core-Metadata-Box bei unkuratierten Paketen (S21) | Per Rückfrage mit drei Optionen geklärt: optionale MD.cff-Blöcke (heritage_object/spatial/temporal) komplett weglassen, wenn ganz leer; verbleibende einzelne Lücken als kursives `*n/a*` statt `?` — Flos Entscheidung, Kombination aus zwei der drei angebotenen Optionen | 2026-09-09 |
+| Erster Release nach diesem PRIMER: `v0.4.0` oder `v1.0.0`? (S10) | `v1.0.0` — Flos Entscheidung nach Rückfrage, siehe S10 Punkt 1: erster echter Ende-zu-Ende-Beweis gegen Produktionsdaten, Timing passt zur Konferenz | 2026-09-09 |
+| `CITATION.cff`s Zenodo-DOI beim Release aktualisieren? (S10) | Nein, nicht in diesem Patch — unklar ob Concept- oder versionsspezifische DOI, lässt sich vor dem echten Zenodo-Archivierungslauf nicht verlässlich bestimmen. Flo aktualisiert von Hand nach dem GitHub-Release, gleiche Handarbeit-Konvention wie `fdo-3d-packager`s `MD.cff.id` | 2026-09-09 |
 
 ## A5. Was in welchem Chat hochgeladen wird
 
@@ -300,7 +302,7 @@ groß sein (3D-Modelle im Beispielpaket).
 | S16 | Nachtrag zu S15: TTL-Snippet höher auflösen, drei gezielte Karten (Metadata/Distributions/Linked Open Data) statt einer generischen | fdo-squirrel | S15 | **erledigt 2026-09-09** (S17: PNG-Bug gefixt) |
 | S17 | Nachtrag zu S16: transparentes PNG für die drei TTL-Snippet-Karten (JPG-Alpha-Bug gefixt), `fdo_overview.png` zusätzlich zu `.jpg` | fdo-squirrel | S16 | **erledigt 2026-09-09** |
 | S9 | README.md auffrischen (Python-Version, MD.cff-Feldliste, Status-Abschnitt) | fdo-squirrel | — | **erledigt 2026-09-08** |
-| S10 | Release: Versionsbump + Git-Tag | fdo-squirrel | `fdo-3d-packager` erst auf HEAD (`2b1a440`) pinnen + frisch durchtesten, in einem eigenen Chat (A4) | offen |
+| S10 | Release: Versionsbump auf `v1.0.0` + Git-Tag + GitHub-Release (koppelt an Zenodo) | fdo-squirrel | `fdo-3d-packager` auf `fdo-squirrel`-HEAD gepinnt + frisch durchgetestet, echte Diagramme verglichen (A4, `fdo-3d-packager` Commit `7ddf1a8`) | **erledigt 2026-09-09** |
 | S11 | Versions-Metadaten mit tatsächlicher Release-Historie synchronisieren + Architektur-Bild-Referenz | fdo-squirrel | — | **erledigt 2026-09-08** |
 | S12 | fdo-squirrel-registry-Rückflussliste verifizieren + `repository-code`-Org korrigieren | fdo-squirrel | — | **erledigt 2026-09-09** |
 | S13 | Zwei Bugs aus S6/S7 gegen echte Pakete: fehlendes Escaping in Turtle-Literalen, nicht-IRI-förmige `id` bei unveröffentlichten Paketen | fdo-squirrel | S6, S7 | **erledigt 2026-09-09** |
@@ -1497,6 +1499,72 @@ unverändert** — das Bild selbst ist weiterhin die alte 4-Boxen-Fassung
 vor S2), weil die lokale `mmdc`-Regeneration aus S2 noch aussteht. Kein
 neuer Fund, nur zur Erinnerung — sobald das Bild lokal neu gerendert
 ist, passt es automatisch zum bereits korrigierten `architecture.mermaid`.
+
+## S10 — Release: Versionsbump auf v1.0.0 + Git-Tag + GitHub-Release
+
+**Ziel:** den ersten Release nach diesem PRIMER schneiden, jetzt wo die
+A4-Bedingung erfüllt ist ("erst `fdo-3d-packager` auf HEAD pinnen und
+frisch durchtesten, danach S10 hier") — bestätigt gegen echte,
+lokal mit `mmdc` gerenderte Diagramme für CIIC 81 + Freshford
+(`fdo-3d-packager` Commit `7ddf1a8`, "Confirm S18-S21 chain against
+real rendered diagrams", gepinnt auf `fdo-squirrel`-HEAD `3868e1e`).
+
+**Uploads:** Repo-Bundle (A5).
+
+**Substanz:**
+1. **Versionssprung `0.3.1` → `1.0.0`, nicht `0.4.0`** — Flos
+   Entscheidung nach Rückfrage im Chat: der Rundlauf ist jetzt zum
+   ersten Mal Ende-zu-Ende gegen echte Produktionsdaten aus dem
+   eigenen Schwester-Tool bewiesen (nicht nur synthetisch), und der
+   Zeitpunkt passt zur FAIR 3D Heritage Conference (14.-16.09.2026) —
+   ein zitierbarer `v1.0.0`-Tag ist griffiger im Vortrag als ein
+   weiterer `0.x`-Sprung. Semver verlangt für 1.0 vor allem eine
+   Rückwärtskompatibilitäts-Zusage ab hier, nicht "feature complete".
+2. **Drei Dateien angepasst** (dieselben drei wie in S11, jetzt mit
+   echtem neuem Stand statt nur Sync-Korrektur): `pyproject.toml`
+   (`version`), `CITATION.cff` (`version`, `date-released`),
+   `README.md` (Kopfzeile + Status-Abschnitt). `fdo_squirrel_version()`
+   (`fdo/fdo_rdf.py`) liest zur Laufzeit aus den installierten Paket-
+   Metadaten (`importlib.metadata.version`) bzw. als Fallback direkt
+   aus `pyproject.toml` — keine eigene, separat zu pflegende
+   Versionskonstante, zieht die neue Zahl also automatisch.
+3. **`CITATION.cff`s DOI (`10.5281/zenodo.18404885`) bewusst
+   unverändert gelassen** — dieselbe Handarbeit-nach-Upload-Konvention
+   wie bei `fdo-3d-packager`s `MD.cff.id` (dessen PRIMER.md Teil D):
+   ob das die Concept-DOI (bleibt über alle Versionen gleich) oder
+   eine versionsspezifische DOI ist, lässt sich vor dem eigentlichen
+   Zenodo-Archivierungslauf nicht sicher sagen — eine Web-Suche danach
+   lieferte keinen eindeutigen Treffer. Flo prüft/aktualisiert das nach
+   dem GitHub-Release von Hand.
+4. **Release-Mechanik geklärt, weil das Repo an Zenodo gekoppelt ist:**
+   ein reiner `git tag` + `git push --tags` reicht nicht — Zenodos
+   GitHub-Integration hört auf das "Release published"-Webhook-Event,
+   das erst beim tatsächlichen Anlegen eines GitHub-Release entsteht,
+   nicht beim bloßen Tag-Push. Vollständige Befehlsfolge (Tag,
+   annotiert; GitHub-Release per `gh` CLI oder Web-UI) steht in der
+   `PATCH-README.md` dieses Patches, nicht hier verkürzt wiederholt.
+
+**Abnahme:** alle drei Versionsangaben zeigen `1.0.0`/`v1.0.0`;
+`fdo_squirrel_version()` liefert `1.0.0` nach `pip install -e .`; Tag
+`v1.0.0` existiert und zeigt auf den S21-Merge-Commit; ein GitHub-
+Release (nicht nur ein Tag) ist veröffentlicht, sodass Zenodo eine neue
+Version archiviert.
+
+### Erledigt 2026-09-09
+
+Wie oben umgesetzt. `pip install -e .` neu ausgeführt und
+`fdo_squirrel_version()` direkt aufgerufen: liefert `1.0.0`, bestätigt
+dass die Laufzeit-Auflösung (`importlib.metadata`) die neue Version
+ohne weiteren Code-Eingriff zieht. Determinismus (S4) nicht erneut
+geprüft — reiner Text-/Metadaten-Change, keine Pipeline-Logik
+berührt, S4s Garantie bleibt unverändert gültig.
+
+**Nicht hier geprüft:** der tatsächliche `git tag`/GitHub-Release/
+Zenodo-Schritt selbst — das sind Aktionen auf Flos Maschine bzw. im
+GitHub-Web-UI, nicht im Sandkasten ausführbar. Befehle stehen
+vollständig in `PATCH-README.md`. Flo bestätigt nach dem Release, dass
+Zenodo tatsächlich archiviert hat und aktualisiert dann `CITATION.cff`s
+DOI von Hand (Punkt 3 oben).
 
 ## S11 — Versions-Metadaten synchronisieren + Architektur-Bild-Referenz
 

@@ -2,7 +2,7 @@
 
 ![FDOx Squirrel logo](logo.png)
 
-**v0.3.1 – Reference implementation (ZIP-based FDOx → RDF)**
+**v1.0.0 – Reference implementation (ZIP-based FDOx → RDF)**
 
 > *FDOx (FAIR Data Object, exchangeable) is a reference implementation of the FAIR Digital Object (FDO) framework, emphasising exchangeability through Linked Open Data and a Wikibase-compatible RDF vocabulary.*
 
@@ -218,7 +218,7 @@ never the whole run.
 
 ## Status
 
-This is a **v0.3.1 reference implementation**.
+This is a **v1.0.0 reference implementation**.
 
 - ✔ stable RDF output
 - ✔ valid Turtle
