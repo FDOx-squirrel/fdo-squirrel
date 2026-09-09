@@ -26,6 +26,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+from fdo_files_roles_common import FDO_SQUIRREL_OWN_FILES
+
 
 @dataclass
 class FDOMetadata:
@@ -71,6 +73,14 @@ def _sanitize_ttl(ttl: str) -> str:
     return "".join(lines)
 
 
+_CC_LICENSE_URL_RE = re.compile(
+    r"creativecommons\.org/licenses/([a-z]+(?:-[a-z]+)*)/(\d+\.\d+)", re.IGNORECASE
+)
+_CC0_URL_RE = re.compile(
+    r"creativecommons\.org/publicdomain/zero/(\d+\.\d+)", re.IGNORECASE
+)
+
+
 def _normalize_license(value: str) -> str:
     if not value or value == "?":
         return "?"
@@ -78,6 +88,21 @@ def _normalize_license(value: str) -> str:
     if s.startswith("https://spdx.org/licenses/") or s.startswith("http://spdx.org/licenses/"):
         s = s.rstrip("/").split("/")[-1]
         s = re.sub(r"\.html?$", "", s, flags=re.IGNORECASE)
+    else:
+        # creativecommons.org URLs aren't SPDX-form (fdo-3d-packager keeps
+        # Sketchfab's raw licence_url as-is when there's no hand-curated
+        # MD.cff override, PRIMER.md handoff 2026-09-09) - normalise the
+        # same shape SPDX already gets, so an uncurated package's licence
+        # doesn't render as a long raw URL next to a curated one's short
+        # SPDX id. CC0 first: it has no /<version>/ path segment the way
+        # the "by"-family licences do, so it needs its own pattern.
+        m = _CC_LICENSE_URL_RE.search(s)
+        if m:
+            s = f"CC-{m.group(1).upper()}-{m.group(2)}"
+        else:
+            m0 = _CC0_URL_RE.search(s)
+            if m0:
+                s = f"CC0-{m0.group(1)}"
     if s in {"CC-BY-4.0", "CC_BY_4.0", "CC-BY-4.0.html"}:
         return "CC-BY-4.0"
     return s
@@ -136,7 +161,6 @@ def _extract_from_ttl(ttl_path: Path, meta: FDOMetadata) -> None:
         re.DOTALL,
     )
     EXCLUDE_ROLES = {"data"}
-    EXCLUDE_EXTS = {".ttl", ".html", ".json"}
     seen: set[tuple[str, str]] = set()
     for block in dist_blocks:
         path_m = re.search(r'fdo:path\s+"([^"]+)"', block)
@@ -144,8 +168,7 @@ def _extract_from_ttl(ttl_path: Path, meta: FDOMetadata) -> None:
         mime_m = re.search(r'dcat:mediaType\s+"([^"]+)"', block)
         if path_m and role_m and mime_m:
             path, role, mime = path_m.group(1), role_m.group(1), mime_m.group(1)
-            ext = path.rsplit(".", 1)[-1].lower() if "." in path else ""
-            if role in EXCLUDE_ROLES or f".{ext}" in EXCLUDE_EXTS:
+            if role in EXCLUDE_ROLES or Path(path).name.lower() in FDO_SQUIRREL_OWN_FILES:
                 continue
             if (role, path) not in seen:
                 seen.add((role, path))
@@ -356,6 +379,7 @@ ROLE_STYLES_3D = {
     "model": ("MODEL", "**fdo:role = model**", "#2b6cb0", "#2c5282"),
     "metadata": ("META", "**fdo:role = metadata**", "#276749", "#22543d"),
     "documentation": ("DOCS", "**fdo:role = documentation**", "#744210", "#5f370e"),
+    "auxiliary": ("AUX", "**fdo:role = auxiliary**", "#4a5568", "#2d3748"),
 }
 
 ROLE_STYLES_SOFTWARE = {
@@ -405,6 +429,13 @@ def _render_role_body(role: str, files: list[tuple[str, str]]) -> str:
     return f"    {primary_mime}\n    *({count} {unit})*"
 
 
+def _n(value: str) -> str:
+    """Render a still-unresolved '?' placeholder as an explicit, calm
+    'n/a' instead of a bare question mark - a lone '?' reads as broken,
+    not as 'not curated yet' (Flo, chat 2026-09-09)."""
+    return "*n/a*" if value == "?" else value
+
+
 def generate_mermaid_3d(meta: FDOMetadata) -> str:
     doi = meta.doi.replace("https://doi.org/", "")
     kws = ", ".join(meta.keywords) if meta.keywords else "?"
@@ -414,28 +445,48 @@ def generate_mermaid_3d(meta: FDOMetadata) -> str:
         "flowchart TD",
         f'    FDO["`🗂️ **FDO: {meta.title}**',
         f"    DOI: {doi}",
-        f'    {total} files · {meta.license} · v{meta.version}`"]',
+        f'    {total} files · {_n(meta.license)} · v{_n(meta.version)}`"]',
         "",
         "    FDO --- PROVMETA",
         "",
         '    PROVMETA["`📋 **Core Metadata**',
         "    ────────────────────────────",
-        f"    🏛️ Object: {_wd(meta.object_label, meta.object_wikidata)}",
-        f"    🪨 Material: {_wd(meta.material_label, meta.material_wikidata)}",
-        f"    🏷️ Keywords: {kws}",
-        f"    📅 Created: {meta.date_created}",
-        f"    👤 Creator: {meta.creator}",
-        f"    🏢 Publisher: {meta.publisher}",
-        f"    🩺 Condition: {meta.condition} · Urgency: {meta.urgency}",
-        f"    📍 Spatial: {meta.spatial_osm}",
-        f"    lat: {meta.latitude} · lon: {meta.longitude}",
-        f"    🕐 Temporal: {meta.temporal_id}",
-        f"    start: {meta.temporal_start} · end: {meta.temporal_end}",
-        f'    ⚙️ Technique: {meta.technique}`"]',
-        "",
     ]
 
-    role_order = ["model", "metadata", "documentation"]
+    # heritage_object/spatial/temporal are optional MD.cff blocks that a
+    # raw, uncurated Sketchfab fetch simply doesn't have (Freshford, this
+    # chat) - either the whole block is there or none of it is. Omit a
+    # block's lines entirely rather than showing a run of bare "?"s, but
+    # if even one field in the block did resolve, show the block with
+    # _n() covering whatever's still missing inside it, since a single
+    # dropped field then looks like an oversight rather than "not
+    # curated" (Flo, chat 2026-09-09).
+    if not all(
+        v == "?"
+        for v in (meta.object_label, meta.material_label, meta.condition, meta.urgency)
+    ):
+        lines.append(f"    🏛️ Object: {_wd(_n(meta.object_label), meta.object_wikidata)}")
+        lines.append(f"    🪨 Material: {_wd(_n(meta.material_label), meta.material_wikidata)}")
+        lines.append(f"    🩺 Condition: {_n(meta.condition)} · Urgency: {_n(meta.urgency)}")
+
+    lines.append(f"    🏷️ Keywords: {_n(kws)}")
+    lines.append(f"    📅 Created: {_n(meta.date_created)}")
+    lines.append(f"    👤 Creator: {_n(meta.creator)}")
+    lines.append(f"    🏢 Publisher: {_n(meta.publisher)}")
+
+    if not all(v == "?" for v in (meta.spatial_osm, meta.latitude, meta.longitude)):
+        lines.append(f"    📍 Spatial: {_n(meta.spatial_osm)}")
+        lines.append(f"    lat: {_n(meta.latitude)} · lon: {_n(meta.longitude)}")
+
+    if not all(v == "?" for v in (meta.temporal_id, meta.temporal_start, meta.temporal_end)):
+        lines.append(f"    🕐 Temporal: {_n(meta.temporal_id)}")
+        lines.append(f"    start: {_n(meta.temporal_start)} · end: {_n(meta.temporal_end)}")
+
+    lines.append(f"    ⚙️ Technique: {_n(meta.technique)}")
+    lines[-1] += '`"]'
+    lines.append("")
+
+    role_order = ["model", "metadata", "documentation", "auxiliary"]
     present = [r for r in role_order if r in meta.distributions]
 
     for role in present:
@@ -473,17 +524,17 @@ def generate_mermaid_software(meta: FDOMetadata) -> str:
         "flowchart TD",
         f'    FDO["`🗂️ **FDO: {meta.title}**',
         f"    DOI: {doi}",
-        f'    {total} files · {meta.license} · v{meta.version}`"]',
+        f'    {total} files · {_n(meta.license)} · v{_n(meta.version)}`"]',
         "",
         "    FDO --- PROVMETA",
         "",
         '    PROVMETA["`📋 **Core Metadata**',
         "    ────────────────────────────",
-        f"    🏷️ Keywords: {kws}",
-        f"    📅 Created: {meta.date_created}",
-        f"    👤 Creator: {meta.creator}",
-        f"    🏢 Publisher: {meta.publisher}",
-        f'    ⚙️ Technical Stack: {meta.technique}`"]',
+        f"    🏷️ Keywords: {_n(kws)}",
+        f"    📅 Created: {_n(meta.date_created)}",
+        f"    👤 Creator: {_n(meta.creator)}",
+        f"    🏢 Publisher: {_n(meta.publisher)}",
+        f'    ⚙️ Technical Stack: {_n(meta.technique)}`"]',
         "",
     ]
 

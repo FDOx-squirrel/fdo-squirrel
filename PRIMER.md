@@ -265,6 +265,9 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | Scope-Erweiterung: S19 (JPG-Entfernung) und S20 (`creators[].id`) doch noch in diesem Chat, statt wie ursprünglich geplant erst in einem Nachgang-Release | Ja, beide zusätzlich erledigt — Flos Entscheidung, nachdem `conversation_search` bestätigte, dass der für `creators[].id` in `fdo-3d-packager`s Teil D erwähnte "separate Chat" noch nicht existiert bzw. das Issue dort noch nicht angefasst hat (keine Kollision mit paralleler Arbeit). S20 fasst dabei nicht nur `creators`, sondern denselben Schema-Widerspruch bei `contributors`/`publishers` gleich mit an, da alle drei dieselbe `require_id_label()`/`resolve_id_label()`-Funktion teilen | 2026-09-09 |
 | `require_id_label()` umbenennen zu `resolve_id_label()` (S20) | Ja — der alte Name war nach dem Fix (optionales `id`) irreführend. Nur innerhalb `crosswalks/md_cff_crosswalk.py` verwendet, kein öffentlicher Re-Export (`crosswalks/__init__.py` geprüft), also risikoarme Umbenennung | 2026-09-09 |
 | Fallback-IRI-Schema für Agenten ohne `id` (S20) | `urn:fdo-squirrel:agent/<slug-aus-label>`, gleiches Slugify-Muster wie `resolve_dataset_id()` (S13) für MD.cffs eigene `id`, aber als eigene kopierte Funktion statt Import (A3, verhindert außerdem einen Zirkelimport zwischen `crosswalks` und `fdo_rdf.py`) | 2026-09-09 |
+| `fdo_mermaid.py`s Selbstausschluss-Filter (S21): eigene Extension-Liste behalten oder `FDO_SQUIRREL_OWN_FILES` importieren? | Import aus `fdo_files_roles_common.py` — kein Zirkelimport-Risiko, und zwei unabhängig gepflegte Ausschlusslisten für denselben Zweck waren genau das Muster, das den `viewer/index.html`-Bug erst entstehen ließ. A3s "Reuse heißt kopieren" gilt repo-übergreifend, nicht für normale Imports innerhalb desselben Pakets | 2026-09-09 |
+| Stale Teil-D-Eintrag "`fdo-squirrel-registry`s Rückfluss-Liste" entfernen (bereits in S12 erledigt, aber nie aus Teil D rausgenommen) | Ja, beim S21-Patch mit erledigt — reiner Dokumentationsfehler, kein Code betroffen | 2026-09-09 |
+| `?`-Platzhalter in der Core-Metadata-Box bei unkuratierten Paketen (S21) | Per Rückfrage mit drei Optionen geklärt: optionale MD.cff-Blöcke (heritage_object/spatial/temporal) komplett weglassen, wenn ganz leer; verbleibende einzelne Lücken als kursives `*n/a*` statt `?` — Flos Entscheidung, Kombination aus zwei der drei angebotenen Optionen | 2026-09-09 |
 
 ## A5. Was in welchem Chat hochgeladen wird
 
@@ -305,6 +308,7 @@ groß sein (3D-Modelle im Beispielpaket).
 | S18 | `classification_rules.yaml` Release-Fix: `.mtl`, `viewer/*` (inkl. `LICENSE.txt`), `data/textures/*` bekommen `model`/`auxiliary` statt der generischen Fallback-Rolle | fdo-squirrel | `fdo-3d-packager`s S7-Fund (build_fdo-Rundlauf) | **erledigt 2026-09-09** |
 | S19 | JPG-Ausgabe entfernen: `fdo_overview.*` + drei `fdo_ttl_snippet_*.*`-Karten nur noch PNG+SVG, Pillow-Abhängigkeit entfernt | fdo-squirrel | `fdo-3d-packager`s S7-Fund (dieselbe Fundstelle wie S18) | **erledigt 2026-09-09** |
 | S20 | `creators[].id` optional machen: `require_id_label()` → `resolve_id_label()`, Fallback-IRI aus `label`, deckt `creators`/`contributors`/`publishers` gleichermaßen ab | fdo-squirrel | `fdo-3d-packager`s S9-Fund | **erledigt 2026-09-09** |
+| S21 | `fdo_mermaid.py`: `auxiliary`-Rolle in `ROLE_STYLES_3D` ergänzt, CC-Lizenz-URLs erkannt, Selbstausschluss-Filter von Extension- auf Dateinamen-Liste umgestellt (fand `viewer/index.html` fehlend) | fdo-squirrel | `fdo-3d-packager`-Handoff nach dessen Pin-Bump-Test | **erledigt 2026-09-09** (Design-Frage zu `?`-Platzhaltern separat offen) |
 
 S2, S3, S4 und S5 sind voneinander unabhängig und können in beliebiger
 Reihenfolge angegangen werden. S6, S7, S8 hängen an einem echten Lauf mit
@@ -1314,6 +1318,154 @@ Wie oben umgesetzt und an drei synthetischen Testpaketen verifiziert:
   eigener Testfall dafür gebaut, weil in der Praxis (Publishers-
   Konvention: immer Q73901970) noch nie beobachtet.
 
+## S21 — `fdo_mermaid.py`: `auxiliary`-Rolle, CC-Lizenz-URLs, Diagramm-Fehlfilter, `?`-Platzhalter
+
+**Ziel:** drei Befunde aus dem `fdo-3d-packager`-Pin-Bump-Chat beheben,
+gefunden beim echten Rundlauf gegen CIIC 81 + Freshford nach S18-S20,
+plus eine im selben Chat direkt entschiedene Design-Frage umsetzen:
+zwei Befunde per Handoff-Dokument gemeldet (`auxiliary`-Rolle fehlt in
+`ROLE_STYLES_3D`/`role_order`; `_normalize_license()` erkennt nur
+`spdx.org`-URLs, nicht `creativecommons.org`), ein dritter selbst
+gefunden beim Verifizieren gegen die echten TTLs (`viewer/index.html`
+verschwindet komplett aus dem Diagramm, nicht nur falsch beschriftet),
+und viertens: wie die "Core Metadata"-Box mit fehlenden Feldern bei
+einem unkuratierten Sketchfab-Fetch umgeht (Flos Frage im Chat, kein
+Handoff-Punkt). `fdo-metadata.ttl` selbst ist laut Handoff für beide
+Slugs korrekt — nur das gerenderte `fdo_overview.*` betroffen.
+
+**Uploads:** Repo-Bundle (A5); `fdo-squirrel-handoff-diagramme.md` (aus
+dem `fdo-3d-packager`-Chat) sowie die vier echten Output-Dateien von
+Flo — `cork-ogham-stone-ciic-81-ucc-4-fdo-metadata.ttl`/`-fdo_overview.png`
+und `freshford-st-lachtains-well-low-poly-fdo-metadata.ttl`/`-fdo_overview.png`
+— erstmals echte Produktionsdaten statt synthetischer Testpakete für
+diesen Chat.
+
+**Substanz:**
+1. **`auxiliary`-Rolle ergänzt** (Handoff Punkt 1): vierter Eintrag in
+   `ROLE_STYLES_3D` (`#4a5568`/`#2d3748`, passend zur bestehenden
+   Palette) und `"auxiliary"` an `role_order` in `generate_mermaid_3d()`
+   angehängt — Vorschlag aus dem Handoff 1:1 übernommen.
+2. **`_normalize_license()` erkennt jetzt `creativecommons.org`-URLs**
+   (Handoff Punkt 2): zwei neue Regexe (`_CC_LICENSE_URL_RE` für die
+   `by`-Familie, `_CC0_URL_RE` separat, da CC0 kein `/<version>/`-
+   Pfadsegment nach dem Lizenznamen hat) — Muster aus
+   `fdo-3d-packager`s `step_mdcff.py` übernommen, aber als eigener Code
+   (A3: reuse heißt kopieren, nicht referenzieren), nicht 1:1 kopiert,
+   da andere Repo-/Funktionssignatur.
+3. **Neuer Fund, nicht im Handoff:** die Diagramm-eigene
+   Selbstausschluss-Logik (`EXCLUDE_EXTS = {".ttl", ".html", ".json"}`
+   in `_extract_from_ttl()`s Distributions-Block) filtert *jede* Datei
+   mit diesen drei Endungen aus dem Diagramm, nicht nur
+   `fdo-squirrel`s eigene generierte Begleitdateien
+   (`rdf_modelling_report.html`/`.json`, `fdo-metadata.ttl` selbst) —
+   trifft dadurch auch `viewer/index.html`, eine echte, mit S18
+   korrekt als `auxiliary` klassifizierte Paketdatei. An CIIC 81
+   bestätigt: 24 statt 25 `auxiliary`-Distributions extrahiert, 31
+   statt 32 Dateien insgesamt im Kopf der Box — die Lücke fiel nicht
+   sofort auf, weil die Box dadurch nicht leer wurde, nur um eine
+   Datei zu klein war. Fix: die extension-basierte Ausschlussliste
+   ersetzt durch einen Import von `FDO_SQUIRREL_OWN_FILES`
+   (`fdo_files_roles_common.py`, dieselbe Liste, die
+   `fdo_files_roles_graph.py` schon für denselben Zweck nutzt) —
+   dateinamen-basiert statt endungs-basiert, schließt also exakt
+   `fdo-squirrel`s neun eigene generierte Begleitdateien aus (acht
+   `.png`-Diagramme + `rdf_modelling_report.json`, alle laut
+   `classification_rules.yaml`s generischer `.png`/`.json`-Extension-
+   Regel mit `fdo:role = documentation` versehen — nicht Teil dieses
+   Fixes, nur zur Einordnung, warum es neun und nicht zwei sind) statt
+   drei ganze Dateiendungen. Echter Import (kein Kopieren) innerhalb
+   desselben Repos — kein Zirkelimport-Risiko (`fdo_files_roles_common.py`
+   importiert nichts aus `fdo_mermaid.py`), und A3s "Reuse heißt
+   kopieren" zielt auf repo-übergreifende Duplikation, nicht auf
+   normale Imports innerhalb eines Pakets — zwei unabhängig gepflegte
+   Ausschlusslisten für denselben Zweck sind genau das Muster, das
+   diesen Bug erst entstehen ließ.
+4. **`?`-Platzhalter in der Core-Metadata-Box überarbeitet** (Flos
+   Entscheidung im Chat, per Rückfrage mit drei Optionen geklärt): die
+   drei optionalen MD.cff-Blöcke `heritage_object`
+   (Object/Material/Condition/Urgency), `spatial` (Spatial/lat/lon) und
+   `temporal` (Temporal/start/end) werden jetzt komplett weggelassen,
+   wenn der ganze Block leer ist (`all(v == "?" for v in ...)` je
+   Block) — ein unkuratierter Sketchfab-Fetch zeigt also gar keine
+   dieser drei Zeilengruppen mehr, statt sechs bis acht einzelner `?`.
+   Ist auch nur ein Feld eines Blocks gesetzt, wird der ganze Block wie
+   gewohnt gezeigt, fehlende Einzelwerte darin (und bei den nicht
+   gruppierten Feldern Keywords/Created/Creator/Publisher/Technique
+   sowie Lizenz/Version im Kopf) als kursives `*n/a*` statt einem
+   nackten `?` — neue Helper-Funktion `_n()`, in
+   `generate_mermaid_3d()` und `generate_mermaid_software()`
+   gleichermaßen angewendet (Konsistenz über beide Diagrammtypen).
+   Kein Eingriff in die `FDOMetadata`-Extraktion selbst (`"?"` bleibt
+   das interne Sentinel für "noch nicht gefunden", threaded durch
+   Dutzende Stellen) — reine Rendering-Entscheidung in den beiden
+   `generate_mermaid_*()`-Funktionen.
+
+**Abnahme:** `python fdo_mermaid.py <echtes CIIC-81-TTL>` zeigt einen
+vierten `AUX`-Knoten mit 25 (nicht 24) Dateien; Freshfords Lizenz zeigt
+`CC-BY-4.0` statt der rohen `creativecommons.org`-URL; CIIC 81s
+`spdx.org`-Lizenz weiterhin unverändert `CC-BY-NC-SA-4.0` (keine
+Regression); ein vollständig kuratiertes Paket zeigt
+Object/Material/Condition/Urgency/Spatial/Temporal weiterhin wie
+gewohnt (keine Regression durch Punkt 4); ein unkuratiertes Paket zeigt
+keine dieser drei Zeilengruppen mehr und keinen nackten `?` an anderer
+Stelle in der Box.
+
+### Erledigt 2026-09-09
+
+Wie oben umgesetzt und verifiziert — Punkte 1-3 direkt gegen die beiden
+echten TTLs (kein synthetisches Testpaket nötig, da Flo die echten
+Dateien mitgeschickt hat), Punkt 4 zusätzlich gegen zwei selbst gebaute
+Fixtures (echtes CIIC-81-TTL, aber mit einem nachgebauten
+`rdf_modelling_report.html`/`md_dict` einmal vollständig kuratiert,
+einmal leer — Flo hatte für die beiden echten Pakete nur TTL +
+gerendertes `.png` mitgeschickt, nicht den HTML-Report/das MD.cff, aus
+denen Object/Material/Condition/Urgency/Spatial/Temporal/Technique
+tatsächlich stammen, nicht aus der TTL selbst):
+- **Alle drei Handoff-nahen Bugs zuerst am unveränderten Stand
+  reproduziert:** CIIC 81 zeigte nur `MODEL`/`META`/`DOCS` (kein
+  `AUX`-Knoten trotz 25 vorhandener `auxiliary`-Distributions in der
+  TTL), Freshford zeigte `38 files · http://creativecommons.org/
+  licenses/by/4.0/ · v?` im Kopf, und ein direkter Python-Check der
+  extrahierten `meta.distributions["auxiliary"]`-Liste zeigte 24 statt
+  25 Einträge mit `viewer/index.html` als fehlendem Eintrag.
+- **Nach dem Fix:** `AUX`-Knoten mit korrekt 25 Dateien (`viewer/
+  index.html` jetzt dabei), Freshford zeigt `CC-BY-4.0`, CIIC 81
+  weiterhin `CC-BY-NC-SA-4.0`, Dateizähler im Kopf beider Diagramme um
+  eins korrekt erhöht (31→32).
+- **Punkt 4, Fixture "vollständig kuratiert"** (nachgebauter HTML-
+  Report + `md_dict` mit CIIC 81s echten Werten aus dem Original-
+  Diagramm): Core-Metadata-Box zeigt Object/Material/Condition/
+  Urgency/Spatial/Temporal/Technique exakt wie im Original-PNG — keine
+  Regression, die drei Blöcke werden bei vorhandenen Daten weiterhin
+  vollständig gezeigt.
+- **Punkt 4, Fixture "komplett unkuratiert"** (kein HTML-Report, leeres
+  `md_dict`, wie ein roher Sketchfab-Fetch ohne Kuratierung): alle
+  drei optionalen Blöcke fehlen komplett in der Box, verbleibende
+  Felder (Keywords/Created/Publisher/Technique) zeigen `Creator`/
+  `Publisher` echt (aus der TTL) bzw. `*n/a*` wo tatsächlich nichts
+  bekannt ist — kein nackter `?` mehr irgendwo in der Box.
+- **Punkt 4, Teilfüllung geprüft** (nur `condition` gesetzt, Object/
+  Material/Urgency weiterhin unbekannt): Block wird trotzdem gezeigt
+  (nicht komplett weggelassen, da nicht *alle* vier Felder leer sind),
+  die drei fehlenden Einzelwerte darin zeigen `*n/a*` — bestätigt, dass
+  die Alles-oder-nichts-Schwelle pro Block funktioniert, nicht nur der
+  komplett-leer- und der komplett-voll-Fall.
+- **Vollständiger `main.py`-Rundlauf gegen das S18-Testpaket** (nicht
+  nur das `fdo_mermaid.py`-Kommandozeilenwerkzeug für sich): Core-
+  Metadata-Box zeigt korrekt keine der drei optionalen Blöcke (das
+  Testpaket hat kein `heritage_object`/`spatial`/`temporal`), `AUX`-
+  Knoten für `viewer/*`/`data/textures/*` erscheint wie erwartet,
+  Pipeline läuft fehlerfrei durch.
+- **Determinismus (S4) hält:** `fdo_mermaid.py` einzeln und der volle
+  `main.py`-Rundlauf je zweimal gelaufen, `fdo_overview.mermaid` und
+  `fdo-metadata.ttl` jeweils bytegleich.
+- **Nicht geprüft:** das tatsächliche gerenderte `fdo_overview.png`
+  (`mmdc` steht in diesem Sandkasten weiterhin nicht zur Verfügung) —
+  nur die `.mermaid`-Quelldatei, die `mmdc` als Eingabe bekommt, und
+  die echten CIIC-81-/Freshford-HTML-Reports/MD.cffs selbst (nicht
+  mitgeschickt, nur nachgebaut). Flo bestätigt den visuellen Effekt
+  beim nächsten echten Lauf.
+
 ## S9 — README.md auffrischen
 
 **Ziel:** die drei durch S1–S5 entstandenen Diskrepanzen zwischen
@@ -1630,9 +1782,3 @@ nicht sofort wieder veraltet ist (S9 hat genau das kritisiert).
   ganz deckungsgleich. Nicht Teil von S20 (bewusst nicht angefasst,
   siehe dort Punkt 4) — eigene Entscheidung/eigener Schritt, falls
   gewünscht.
-- **`fdo-squirrel-registry`s Rückfluss-Liste** (aus deren eigenem PRIMER,
-  S10 Punkt 8) wartet ebenfalls auf einen `fdo-squirrel`-Chat: abgekürzte
-  Klassen-IRIs, `xsd:integer` an weiteren Zeitgrenzen,
-  `<DOI>_geom`/`<DOI>_temporal`-IRIs in fremdem Namensraum, ORCID statt
-  Personen-URN, `dcat:bbox` statt `geo:hasBoundingBox`. Noch keinem
-  Schritt zugeordnet.
