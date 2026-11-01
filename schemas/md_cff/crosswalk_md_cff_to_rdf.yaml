@@ -188,18 +188,30 @@ mappings:
     value_type: "object_id_label"
 
   heritage_object.documentation_purpose:
-    predicate: "dct:description"
+    predicate: "fdo:documentationPurpose"
     value_type: "literal"
 
   heritage_object.overall_condition:
-    predicate: "dct:description"
+    predicate: "fdo:overallCondition"
     value_type: "literal"
 
   heritage_object.conservation_urgency:
-    predicate: "dct:description"
+    predicate: "fdo:conservationUrgency"
     value_type: "literal"
 
   # ---------------- Technique ----------------
+  technique.acquisition.method:
+    predicate: "fdo:acquisitionMethod"
+    value_type: "literal"
+
+  technique.acquisition.hardware:
+    predicate: "fdo:acquisitionHardware"
+    value_type: "literal"
+
+  technique.acquisition.images_count:
+    predicate: "fdo:acquisitionImagesCount"
+    value_type: "literal"
+
   technique.processing:
     predicate: "dct:provenance"
     value_type: "literal_or_object"

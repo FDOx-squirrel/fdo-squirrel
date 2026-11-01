@@ -482,6 +482,16 @@ def _emit_object_id_label_inline(
             post.append(f"{node} {label_predicate} {_ttl_lit(label)} .")
 
 
+def _node_base(subj: str) -> str:
+    """IRI base for nodes minted next to the dataset (temporal, geometry).
+
+    Uses the resolved dataset subject (``<urn:fdo-squirrel:unpublished/...>``
+    while MD.cff ``id`` is still a "TODO" placeholder) instead of the raw
+    MD.cff ``id``, which would otherwise end up inside the IRI, spaces and all.
+    """
+    return subj.strip().strip("<>")
+
+
 def _apply_md_cff_mapping(
     md: Dict[str, Any], subj: str, tracker: "ProvenanceTracker"
 ) -> Tuple[List[str], List[str]]:
@@ -530,7 +540,7 @@ def _apply_md_cff_mapping(
             hname = spec["handler"]
             if hname == "temporal_node" and isinstance(val, dict):
                 # mint temporal node IRI deterministically
-                node = f"<{md.get('id')}_temporal>"
+                node = f"<{_node_base(subj)}_temporal>"
                 post.append(f"{subj} dct:temporal {node} .")
                 post.append(f"{node} a dct:PeriodOfTime .")
                 # Link ChronOntology (or any provided temporal 'id') to the minted temporal node
@@ -676,7 +686,7 @@ def _apply_md_cff_mapping(
                                     f"    schema:longitude {_ttl_lit(item.get('lon'), datatype='xsd:decimal')} ;"
                                 )
 
-                            node = f"<{md.get('id')}_geom>"
+                            node = f"<{_node_base(subj)}_geom>"
                             sf_type = _infer_sf_type_from_wkt(wkt)
                             post.append(f"{subj} geosparql:hasGeometry {node} .")
                             post.append(f"{node} a {sf_type} .")
