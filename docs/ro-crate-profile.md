@@ -34,3 +34,6 @@ generating application now has both `version` and `softwareVersion`. The
 validator also warns that conformance to the FDOx profile IRI itself could
 not be verified; the IRI does not resolve yet (the w3id registration is an
 open point in `PRIMER.md`).
+
+A step-by-step guide for running the validator yourself is in
+[Validating the RO-Crate in a bundle](validate-ro-crate.md).

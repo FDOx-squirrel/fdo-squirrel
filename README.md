@@ -105,7 +105,9 @@ The generated files in detail:
   published with FAIR Signposting, a lightweight "Webby" FDO). Generated
   from the same inputs as `fdo-metadata.ttl`, which stays the lossless
   carrier — see [docs/ro-crate-mapping.md](docs/ro-crate-mapping.md) and
-  the [FDOx profile](docs/ro-crate-profile.md).
+  the [FDOx profile](docs/ro-crate-profile.md). To check a bundle yourself
+  with the community validator, follow
+  [Validating the RO-Crate in a bundle](docs/validate-ro-crate.md).
 
 - **`fdo-landing-page.html`** *(and `fdo-linkset.json` with `--base-url`)*  
   A small landing page whose `<head>` carries

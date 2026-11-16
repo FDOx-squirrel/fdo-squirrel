@@ -330,6 +330,7 @@ groß sein (3D-Modelle im Beispielpaket).
 | S25 | Output-Layout: Bundle + vier lose Dateien in `--outdir`, Rest in `_work/`; `.gitignore` (`output*/`, `out/`, `/fdo_overview.mermaid`); Doku-Nachtrag zu S22/S24 | fdo-squirrel | S22–S24 | **erledigt 2026-11-16** (Patch, von Flo noch anzuwenden) |
 | S26 | Release `v1.2.0` (Versionsbump, Tag, GitHub-Release), enthält S25; danach `fdo-3d-packager`-Pin auf `v1.2.0` | fdo-squirrel | S25, von Flo lokal geprüft | **erledigt 2026-11-16** (Commit `6493f1c`, Tag `v1.2.0`, GitHub-Release; Zenodo archiviert) |
 | S27 | Korrektur `fdo_md_cff_graph.py`: Höhe des zentralen Knotens, Pfeilenden verteilt; Release `v1.2.1` | fdo-squirrel | S26 | **vorbereitet 2026-11-16** (Tag + Release von Hand, Befehle in `PATCH-README.md`) |
+| S28 | Anleitung „RO-Crate validieren" (`docs/validate-ro-crate.md`), `docs/index.md` + `_config.yml` für GitHub Pages, Verweise in README und `docs/ro-crate-profile.md` | fdo-squirrel | S22, S27 | **vorbereitet 2026-11-16** (Pages von Hand einschalten) |
 
 S2, S3, S4 und S5 sind voneinander unabhängig und können in beliebiger
 Reihenfolge angegangen werden. S6, S7, S8 hängen an einem echten Lauf mit
@@ -1729,6 +1730,37 @@ die Grafik eines Laufs mit Govan 5 zeigt einen kompakten Knoten.
 
 Im Sandkasten gegen den echten `MD.cff` aus Flos Govan-5-Bundle gerendert
 und angesehen. Tag/Release von Hand.
+
+## S28 — Anleitung zum Validieren und GitHub Pages
+
+**Ziel:** Wer ein Bundle bekommt (Zenodo, Download), soll in wenigen Minuten
+selbst prüfen können, dass es ein gültiges RO-Crate 1.2 ist, ohne FDOx zu
+kennen.
+
+**Substanz:** `docs/validate-ro-crate.md`: Installation (`pip install
+roc-validator`), Bundle in leeren Ordner entpacken, `rocrate-validator
+validate <ordner>`, Ergebnis lesen (Zahlen aus Flos Läufen), die erwartete
+Warnung zur Profil-IRI, Fehlertabelle; Windows-cmd und Linux/macOS je als
+Einzeiler. `docs/index.md` und `docs/_config.yml` (Theme `jekyll-theme-minimal`)
+machen `docs/` zu einer GitHub-Pages-Quelle; Verweise aus README (Abschnitt
+Output) und `docs/ro-crate-profile.md`.
+
+**Beschluss:** Pages nur als Leseansicht der vorhandenen Markdown-Dateien,
+kein eigener Build, kein Tool-Aufruf im Browser. Links aus `docs/` ins
+übrige Repo sind absolute GitHub-URLs, relative Links nur zwischen
+`docs/`-Dateien (Pages löst sie auf).
+
+**Abnahme:** Anleitung gegen ein echtes Bundle durchgespielt (Flo, lokal);
+Pages eingeschaltet (Settings → Pages → Deploy from a branch → `main` →
+`/docs`), Seite erreichbar unter `https://fdox-squirrel.github.io/fdo-squirrel/`.
+
+### Vorbereitet 2026-11-16
+
+Installation und Aufruf der CLI im Sandkasten bestätigt (`roc-validator`
+0.13.1, `rocrate-validator validate --help`). Die Validierung selbst läuft im
+Sandkasten nicht (kein Zugriff auf die abgerufenen Ressourcen, `403`);
+die Zahlen auf der Seite stammen aus Flos lokalen Läufen. Jekyll-Rendering
+nicht lokal gebaut.
 
 ## S9 — README.md auffrischen
 
