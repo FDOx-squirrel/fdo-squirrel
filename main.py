@@ -1,5 +1,6 @@
 from pathlib import Path
 import argparse
+import sys
 import json
 import html
 import re
@@ -38,6 +39,17 @@ from fdo_finalize import render_mermaid_to_png, build_finished_bundle
 # This can be a DOI, landing page, or direct ZIP URL.
 
 PACKAGE_SOURCE = ""  # Fallback
+
+# Output layout (S25, PRIMER.md): --outdir holds the finished bundle plus a
+# short list of files worth opening directly; everything else this run writes
+# goes to --outdir/_work. The bundle contains all of it anyway.
+WORK_DIRNAME = "_work"
+LOOSE_OUTPUT_FILES = (
+    "rdf_modelling_report.html",
+    "fdo_overview.png",
+    "fdo-metadata.ttl",
+    "ro-crate-metadata.json",
+)
 
 
 def resolve_package_source(default_value: str) -> str:
@@ -366,6 +378,15 @@ def write_html_report(json_path: Path, html_path: Path, context: dict):
 
 
 def main():
+    # A piped or redirected stream on Windows uses the ANSI code page
+    # (cp1252), which cannot encode the status marks printed below and in
+    # fdo/. Replace what does not fit instead of crashing mid-run.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
     # --------------------------------------------------
     # Project root (for packaged data: schemas/, crosswalks/, ...)
     # and output directory (for what this run writes)
@@ -397,8 +418,10 @@ def main():
     if output_dir.exists():
         shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True)
+    work_dir = output_dir / WORK_DIRNAME
+    work_dir.mkdir()
 
-    output_path = output_dir / "fdo-metadata.ttl"
+    output_path = work_dir / "fdo-metadata.ttl"
 
     # --------------------------------------------------
     # Load FDO package (ZIP via URL / DOI)
@@ -407,13 +430,13 @@ def main():
     md, cff, info = load_package_from_source(package_source)
 
     # Centralised provenance: remember exactly which package was used, and
-    # where this run's output_dir is - fdo_rdf.py's JSON-report writer reads
-    # info["output_dir"] independently of the output_dir this function
+    # where this run's work dir is - fdo_rdf.py's JSON-report writer reads
+    # info["output_dir"] independently of the work_dir this function
     # already resolved above, so both have to agree or the report ends up
     # relative to whatever the current directory happens to be instead of
     # --outdir.
     info["package_source"] = package_source
-    info["output_dir"] = str(output_dir)
+    info["output_dir"] = str(work_dir)
 
     # --------------------------------------------------
     # Validate MD.cff against schema
@@ -462,7 +485,7 @@ def main():
     # fdo-squirrel's own output. Best-effort: skipped with a warning if
     # resvg-py isn't installed, same pattern as fdo_overview.png's mmdc.
     # --------------------------------------------------
-    files_roles_graph_svg_path = output_dir / "fdo_files_roles_graph.svg"
+    files_roles_graph_svg_path = work_dir / "fdo_files_roles_graph.svg"
     try:
         write_files_roles_graph(output_path, cw.title, files_roles_graph_svg_path)
         print(f"✔ Files-and-roles graph written to {files_roles_graph_svg_path}")
@@ -471,20 +494,20 @@ def main():
 
     ttl_snippet_files = []
     try:
-        ttl_snippet_files = write_ttl_snippet_cards(output_path, cw.title, output_dir)
+        ttl_snippet_files = write_ttl_snippet_cards(output_path, cw.title, work_dir)
         pngs = [p.name for p in ttl_snippet_files if p.suffix == ".png"]
         print(f"✔ TTL snippet cards written: {', '.join(pngs) if pngs else '(SVG only, resvg-py missing)'}")
     except Exception as e:
         print(f"⚠ TTL snippet cards skipped: {e}")
 
-    md_cff_svg_path = output_dir / "fdo_md_cff.svg"
+    md_cff_svg_path = work_dir / "fdo_md_cff.svg"
     try:
         write_md_cff_diagram(md, cw.title, md_cff_svg_path)
         print(f"✔ MD.cff diagram written to {md_cff_svg_path}")
     except Exception as e:
         print(f"⚠ MD.cff diagram skipped: {e}")
 
-    md_cff_graph_svg_path = output_dir / "fdo_md_cff_graph.svg"
+    md_cff_graph_svg_path = work_dir / "fdo_md_cff_graph.svg"
     try:
         write_md_cff_graph(md, cw.title, md_cff_graph_svg_path)
         print(f"✔ MD.cff graph written to {md_cff_graph_svg_path}")
@@ -494,14 +517,14 @@ def main():
     # --------------------------------------------------
     # Write HTML modelling report (from rdf_modelling_report.json)
     # --------------------------------------------------
-    json_report_path = output_dir / "rdf_modelling_report.json"
+    json_report_path = work_dir / "rdf_modelling_report.json"
     if not json_report_path.exists():
         # Fallback for older runs / alternative locations
         alt = project_root / "rdf_modelling_report.json"
         if alt.exists():
             json_report_path = alt
 
-    html_report_path = output_dir / "rdf_modelling_report.html"
+    html_report_path = work_dir / "rdf_modelling_report.html"
     write_html_report(json_report_path, html_report_path, info)
 
     # --------------------------------------------------
@@ -509,7 +532,7 @@ def main():
     # PRIMER.md), distinct from the field-by-field provenance report
     # above.
     # --------------------------------------------------
-    fdox_yaml_path = output_dir / "FDOx.yaml"
+    fdox_yaml_path = work_dir / "FDOx.yaml"
     write_fdox_yaml(
         fdox_yaml_path,
         cw,
@@ -522,7 +545,7 @@ def main():
     # --------------------------------------------------
     # Write Mermaid overview diagram
     # --------------------------------------------------
-    mermaid_path = output_dir / "fdo_overview.mermaid"
+    mermaid_path = work_dir / "fdo_overview.mermaid"
     try:
         gen = FDOMermaidGenerator(
             ttl_path=output_path,
@@ -540,7 +563,7 @@ def main():
     # JPG (S19, PRIMER.md) - PNG+SVG only, consistent with every other
     # diagram this tool writes.
     # --------------------------------------------------
-    png_path = output_dir / "fdo_overview.png"
+    png_path = work_dir / "fdo_overview.png"
     render_mermaid_to_png(mermaid_path, png_path)
 
     # --------------------------------------------------
@@ -614,7 +637,7 @@ def main():
     if package_files is not None:
         try:
             for p in write_signposting(
-                output_dir,
+                work_dir,
                 cw,
                 resolved_id=cw.id,
                 citation_raw=cff,
@@ -635,7 +658,7 @@ def main():
     # carries no size/hash for fdo-metadata.ttl (finalised afterwards; see
     # fdo_rocrate.py). Best-effort: a failure here never costs the run.
     # --------------------------------------------------
-    ro_crate_path = output_dir / CRATE_FILENAME
+    ro_crate_path = work_dir / CRATE_FILENAME
     if package_files is not None:
         try:
             crate = build_ro_crate(
@@ -679,6 +702,17 @@ def main():
     )
     if result:
         print(f"✔ Finished FDO bundle written to {result}")
+
+    # --------------------------------------------------
+    # Files worth opening without unzipping the bundle sit next to it; the
+    # rest of this run's files stay in _work/ (and in the bundle).
+    # --------------------------------------------------
+    for name in LOOSE_OUTPUT_FILES:
+        src = work_dir / name
+        if src.exists():
+            shutil.copyfile(src, output_dir / name)
+    print(f"ℹ Next to the bundle: {', '.join(n for n in LOOSE_OUTPUT_FILES if (output_dir / n).exists())}")
+    print(f"ℹ All other generated files: {work_dir}")
 
 
 if __name__ == "__main__":

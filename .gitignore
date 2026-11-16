@@ -1,5 +1,7 @@
 # local files
-output/*
+output*/
+out/
+/fdo_overview.mermaid
 config.local.json
 
 # Byte-compiled / optimized / DLL files

@@ -279,6 +279,10 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | Signposting aufnehmen (S24) | Ja, alle drei Teile — Flos Entscheidung 2026-11-13: Prüfskript, Doku und Landing-Page-Generator; zusammen mit S22 in einem Patch und einem Release `v1.1.0` statt zwei | 2026-11-13 |
 | Landing-Page-Name (S24) | `fdo-landing-page.html`, nicht `index.html`: die Supersede-Regel in `build_finished_bundle()` arbeitet über den Basename an beliebiger Stelle des Pakets, ein `index.html` würde `viewer/index.html` des 3DHOP-Viewers aus dem Bundle werfen. Entsprechend `fdo-linkset.json` statt `linkset.json`. Claude-Vorschlag, von Flo noch zu bestätigen | 2026-11-13, Vorschlag |
 | Landing Page immer, Linkset nur mit `--base-url` (S24) | Die Seite funktioniert mit relativen Links auch ohne bekannte URL (ein Ordner, in dem das Bundle entpackt liegt); das Linkset braucht absolute Anker, daher nur mit `--base-url`. `--base-url` löst außerdem den `item`-Link auf das Bundle-ZIP und den `rel="linkset"`-Link aus. Claude-Vorschlag, von Flo noch zu bestätigen | 2026-11-13, Vorschlag |
+| Output-Layout (S25) | `--outdir` enthält das fertige Bundle plus vier lose Dateien (`fdo-metadata.ttl`, `ro-crate-metadata.json`, `rdf_modelling_report.html`, `fdo_overview.png`); alles übrige (Landing Page, Linkset, `FDOx.yaml`, JSON-Bericht, Diagramme) liegt in `--outdir/_work/`. Flos Entscheidung im Dialog; das Bundle bleibt byte-identisch zum alten Layout, weil alle Dateien weiter ins Bundle gefaltet werden. Der Ordner wird weiterhin bei jedem Lauf geleert | 2026-11-16 |
+| `fdo-3d-packager` und das neue Layout (S25) | Kompatibel ohne Codeänderung: der Packager liest `fdo-metadata.ttl` und `*-fdo-bundle.zip` direkt aus dem Release-Ordner, räumt per `rmtree`/`unlink` auf (Unterordner `_work` stört nicht) | 2026-11-16 |
+| Versionssprung für S25 (S26) | `v1.2.0` (Minor): sichtbare Layout-Änderung, Inhalt des Bundles unverändert. Flo bestätigt im Dialog | 2026-11-16 |
+| `.gitignore` (S25) | `output/*` ersetzt durch `output*/` (deckt `output_url/` u. ä.), zusätzlich `out/` und `/fdo_overview.mermaid` (Wurzel-Überbleibsel von `python fdo_mermaid.py` ohne Ausgabepfad) | 2026-11-16 |
 
 ## A5. Was in welchem Chat hochgeladen wird
 
@@ -320,9 +324,11 @@ groß sein (3D-Modelle im Beispielpaket).
 | S19 | JPG-Ausgabe entfernen: `fdo_overview.*` + drei `fdo_ttl_snippet_*.*`-Karten nur noch PNG+SVG, Pillow-Abhängigkeit entfernt | fdo-squirrel | `fdo-3d-packager`s S7-Fund (dieselbe Fundstelle wie S18) | **erledigt 2026-09-09** |
 | S20 | `creators[].id` optional machen: `require_id_label()` → `resolve_id_label()`, Fallback-IRI aus `label`, deckt `creators`/`contributors`/`publishers` gleichermaßen ab | fdo-squirrel | `fdo-3d-packager`s S9-Fund | **erledigt 2026-09-09** |
 | S21 | `fdo_mermaid.py`: `auxiliary`-Rolle in `ROLE_STYLES_3D` ergänzt, CC-Lizenz-URLs erkannt, Selbstausschluss-Filter von Extension- auf Dateinamen-Liste umgestellt (fand `viewer/index.html` fehlend) | fdo-squirrel | `fdo-3d-packager`-Handoff nach dessen Pin-Bump-Test | **erledigt 2026-09-09** (Design-Frage zu `?`-Platzhaltern separat offen) |
-| S22 | RO-Crate 1.2 als zusätzliche Sicht auf das Bundle: `ro-crate-metadata.json` im Bundle-Root, aus denselben Quellen wie die TTL | fdo-squirrel | — | **erledigt 2026-11-13** (Validator-Lauf mit `roc-validator` steht bei Flo aus, Teil D) |
-| S24 | FAIR Signposting: `fdo-landing-page.html` mit `<link>`-Signposts (+ `fdo-linkset.json` mit `--base-url`), Prüfskript `tools/check_signposting.py`, `docs/signposting.md` | fdo-squirrel | S22 | **erledigt 2026-11-13** (Skript gegen echte Zenodo-Records steht bei Flo aus, Teil D) |
-| S23 | Release `v1.1.0` (Versionsbump, Tag, GitHub-Release → Zenodo), enthält S22 und S24 | fdo-squirrel | S22, S24, von Flo lokal geprüft | **vorbereitet 2026-11-13** (Tag + Release von Hand, Befehle in `PATCH-README.md`) |
+| S22 | RO-Crate 1.2 als zusätzliche Sicht auf das Bundle: `ro-crate-metadata.json` im Bundle-Root, aus denselben Quellen wie die TTL | fdo-squirrel | — | **erledigt 2026-11-13**; `roc-validator` 2026-11-16: gültiges `ro-crate-1.2` (Nachtrag in S22) |
+| S24 | FAIR Signposting: `fdo-landing-page.html` mit `<link>`-Signposts (+ `fdo-linkset.json` mit `--base-url`), Prüfskript `tools/check_signposting.py`, `docs/signposting.md` | fdo-squirrel | S22 | **erledigt 2026-11-13**; Zenodo-Check 2026-11-16 (Nachtrag in S24) |
+| S23 | Release `v1.1.0` (Versionsbump, Tag, GitHub-Release → Zenodo), enthält S22 und S24 | fdo-squirrel | S22, S24, von Flo lokal geprüft | **erledigt 2026-11-16** (Commit `f10267f`, Tag `v1.1.0`, Zenodo-Version-DOI `10.5281/zenodo.24280786`) |
+| S25 | Output-Layout: Bundle + vier lose Dateien in `--outdir`, Rest in `_work/`; `.gitignore` (`output*/`, `out/`, `/fdo_overview.mermaid`); Doku-Nachtrag zu S22/S24 | fdo-squirrel | S22–S24 | **erledigt 2026-11-16** (Patch, von Flo noch anzuwenden) |
+| S26 | Release `v1.2.0` (Versionsbump, Tag, GitHub-Release), enthält S25; danach `fdo-3d-packager`-Pin auf `v1.2.0` | fdo-squirrel | S25, von Flo lokal geprüft | **vorbereitet 2026-11-16** (Tag + Release von Hand, Befehle in `PATCH-README.md`) |
 
 S2, S3, S4 und S5 sind voneinander unabhängig und können in beliebiger
 Reihenfolge angegangen werden. S6, S7, S8 hängen an einem echten Lauf mit
@@ -1542,6 +1548,19 @@ abweichend definiert sind, zeigt erst Flos Validator-Lauf (Befehl in
 `PATCH-README.md`). Auch nicht geprüft: echte Pakete (CIIC 81,
 Freshford) — nur das synthetische Testpaket.
 
+### Nachtrag 2026-11-16 — `roc-validator`
+
+Flo hat `roc-validator` 0.13.1 (Profil `ro-crate-1.2`) auf ein echtes 3D-Paket
+(Q60) laufen lassen. Erster Lauf: ein Befund, die generierende
+`SoftwareApplication` hatte nur `softwareVersion`, das Profil verlangt
+`version`; behoben (beide Felder, neuer Test). Zweiter Lauf: **gültiges
+`ro-crate-1.2`**, 63 Checks bestanden, 0 fehlgeschlagen, 3 übersprungen.
+Die Warnung, dass die Konformität zum FDOx-Profil-IRI nicht prüfbar sei, bleibt
+bis zur w3id-Registrierung (Teil D). Eingearbeitet in `docs/ro-crate-profile.md`.
+Beifund: `fdo_squirrel_version()` bevorzugt die installierten Paket-Metadaten;
+nach einem Versionsbump zeigte das Crate deshalb noch `1.0.0`, bis Flo
+`pip install -e .` neu ausführte (Teil D).
+
 ## S23 — Release v1.1.0
 
 **Ziel:** S22 und S24 als Release `v1.1.0` veröffentlichen (Zenodo-Kopplung
@@ -1564,6 +1583,13 @@ nennt `version: 1.1.0`.
 Versionsangaben und Release-Text im Patch. Tag/Release selbst nicht in der
 Sandbox ausführbar (kein Push-Zugriff), Status wird erst nach Flos
 Rückmeldung auf **erledigt** gesetzt.
+
+### Erledigt 2026-11-16
+
+Commit `f10267f`, Tag `v1.1.0`, GitHub-Release; Zenodo hat archiviert,
+Version-DOI `10.5281/zenodo.24280786` (Concept-DOI `10.5281/zenodo.18404885`).
+`CITATION.cff` trägt die Concept-DOI und bleibt dadurch unverändert, ein
+Nachtragen der Version-DOI von Hand ist nicht nötig.
 
 ## S24 — FAIR Signposting
 
@@ -1616,10 +1642,66 @@ Unit-Tests grün; das Prüfskript gegen die generierte Seite (offline) und
 gegen einen lokalen Server mit mehreren `Link`-Headern, einem Linkset und
 HTML-`<link>` geprüft.
 
+**Nachtrag 2026-11-16 (Zenodo-Check):** Flo hat das Prüfskript gegen die
+DOIs von CIIC 81 und Freshford laufen lassen. Zenodo sendet selbst Level 1
+und Level 2 (`cite-as`, 15 `describedby`, `item` fürs ZIP, `license`,
+`type`, `rel="linkset"`), beide Records bestehen den Level-1-Check. Es
+fehlen das `profile`-Attribut am ZIP-`item` und ein `describedby` auf
+`ro-crate-metadata.json`: Zenodo-seitig, nicht änderbar (Teil D). Eingearbeitet
+in `docs/signposting.md`.
+
 **Nicht in der Sandbox geprüft:** das Prüfskript gegen echte Adressen
 (Netz gesperrt) — was Zenodo für CIIC 81/Freshford tatsächlich ausliefert,
 ist offen; das Veröffentlichen auf GitHub Pages; ob externe Clients
 (`signposting`-Bibliothek, F-UJI) die `<link>`-Variante auswerten.
+
+## S25 — Output-Layout und Aufräumen
+
+**Ziel:** `--outdir` übersichtlich halten: das Bundle und wenige lose Dateien
+oben, alles übrige in einem Unterordner. Dazu `.gitignore` aufräumen und die
+Befunde aus Flos Läufen (Validator, Zenodo) in die Doku bringen.
+
+**Substanz:**
+- `main.py`: `WORK_DIRNAME = "_work"`, `LOOSE_OUTPUT_FILES` (vier Namen,
+  Beschluss in A4). Alle Generatoren schreiben nach `_work/`
+  (`info["output_dir"]` zeigt dorthin); das Bundle entsteht im Ausgabeordner
+  selbst; nach dem Bundle werden die vier Dateien dorthin kopiert.
+- `.gitignore`: `output*/`, `out/`, `/fdo_overview.mermaid`.
+- Docs: `docs/signposting.md` (Abschnitt "What Zenodo serves"),
+  `docs/ro-crate-profile.md` (Abschnitt "Validation"), README (Output-Abschnitt
+  beschreibt das Layout).
+- Test `tests/test_output_layout.py`: lässt `main.py` auf einem kleinen
+  synthetischen Paket laufen und prüft Oberfläche, `_work/`, Kopien und
+  Bundle-Inhalt.
+
+**Abnahme:** `output/` enthält Bundle plus die vier Dateien (das PNG nur mit
+`mmdc`) und `_work/`; das Bundle ist byte-identisch zu dem aus `v1.1.0`
+(gleiches Paket, gleicher `cmp`); alle Tests grün; `git status` im Repo nach
+einem Lauf mit `--outdir output_url` zeigt nichts Neues.
+
+### Erledigt 2026-11-16
+
+Wie oben. Bundle gegen `v1.1.0` mit dem synthetischen Testpaket byte-gleich
+geprüft; 31 Tests grün.
+
+## S26 — Release v1.2.0
+
+**Ziel:** S25 als `v1.2.0` veröffentlichen.
+
+**Substanz:** `pyproject.toml`, `CITATION.cff` (`version`, `date-released`
+2026-11-16) und README-Kopfzeile auf `1.2.0`; `docs/releases/v1.2.0.md`.
+Tag und GitHub-Release von Hand (Befehle in `PATCH-README.md`). **Danach** den
+Pin in `fdo-3d-packager` auf `v1.2.0` setzen (dessen Patch gehört erst nach
+dem Tag angewendet: ein Pin auf einen noch nicht existierenden Tag bricht
+`pip install -r requirements.txt`).
+
+**Abnahme:** Tag `v1.2.0` und Release veröffentlicht; Zenodo archiviert;
+`FDOx.yaml`/Crate eines neuen Laufs nennen `1.2.0`.
+
+### Vorbereitet 2026-11-16
+
+Versionsangaben und Release-Text im Patch; Tag/Release nicht in der Sandbox
+ausführbar.
 
 ## S9 — README.md auffrischen
 
@@ -2005,11 +2087,10 @@ nicht sofort wieder veraltet ist (S9 hat genau das kritisiert).
   ganz deckungsgleich. Nicht Teil von S20 (bewusst nicht angefasst,
   siehe dort Punkt 4) — eigene Entscheidung/eigener Schritt, falls
   gewünscht.
-- **`roc-validator`-Lauf steht aus** (S22): in der Sandbox nicht möglich
-  (Netz-Sperre für den RO-Crate-Kontext). Flo führt ihn lokal aus (Befehl
-  in S22s `PATCH-README.md`) und meldet das Ergebnis; Befunde (z. B.
-  Termnamen für `sha256`) fließen in einen Nachtrag zu S22.
-- **w3id-Pfad `/profile/` registrieren** (S22): das FDOx-Profil
+- **`roc-validator`** (S22): **erledigt 2026-11-16**, gültiges
+  `ro-crate-1.2` (Nachtrag in S22). Offen bleibt nur die Warnung zum
+  FDOx-Profil-IRI (nächster Punkt).
+- **w3id-Pfad `/profile/` registrieren** (S22; der Validator warnt bis dahin, dass die Profil-Konformität nicht prüfbar sei): das FDOx-Profil
   `https://w3id.org/fdo-squirrel/profile/ro-crate/1.0` löst noch nicht
   auf; ohne Redirect (PR im `perma-id/w3id.org`-Repo) ist es nur ein
   Name. Das Crate verweist deshalb zusätzlich per `url` auf
@@ -2019,11 +2100,11 @@ nicht sofort wieder veraltet ist (S9 hat genau das kritisiert).
   Keyword-IRIs, weitere Identifier-Schemata (Liste in
   `docs/ro-crate-mapping.md`). Eigene Entscheidung pro Feld, falls
   gewünscht.
-- **`check_signposting.py` gegen echte Records laufen lassen** (S24): Flo
-  führt es lokal auf Windows-cmd gegen die Zenodo-DOIs von CIIC 81 und
-  Freshford aus (`--linkset`), Ergebnis zeigt, was Zenodo tatsächlich
-  sendet (`cite-as`, `describedby`, `item` fürs ZIP, `profile`-Attribut?).
-  Befunde fließen in einen Nachtrag zu S24.
+- **`check_signposting.py` gegen echte Records** (S24): **erledigt
+  2026-11-16** (Nachtrag in S24). Zenodo sendet Level 1 und 2 selbst, aber
+  kein `profile`-Attribut am ZIP-`item` und kein `describedby` auf das Crate.
+  Offen: ob die Registry das Crate für Zenodo-Records selbst auflöst (öffnet
+  das ZIP) oder ob das ZIP-`item` ohne Profil genügt.
 - **Landing Page auf statischem Hosting ausprobieren** (S24): Bundle mit
   `--base-url` bauen, entpacken, auf GitHub Pages stellen und das
   Prüfskript dagegen laufen lassen; offen, ob Clients (F-UJI,
@@ -2032,3 +2113,13 @@ nicht sofort wieder veraltet ist (S9 hat genau das kritisiert).
   Crate künftig mit einliest und ob `fdo-3d-packager` es in seinen
   Paketen vorhalten soll, ist offen — gehört in jeweils eigene Chats
   (A3, ein Repo pro Chat).
+- **Installierte Version gegen Checkout** (gefunden 2026-11-16):
+  `fdo_squirrel_version()` bevorzugt die Metadaten des installierten Pakets
+  vor `pyproject.toml`; nach einem Versionsbump zeigen `FDOx.yaml`, TTL und
+  Crate die alte Zahl, bis `pip install -e .` neu läuft. Möglicher Fix: bei
+  einer `pyproject.toml` neben dem Modul diese vorziehen. Eigene
+  Entscheidung (ändert alte Verhalten).
+- **Visuals und das Crate** (S25 nebenbei): `fdox-visuals` bekommt eine
+  Grafik "ein Bundle, drei Sichten" und erweiterte Architektur; das offizielle
+  RO-Crate-Logo legt Flo selbst ab (Nutzungsbedingungen ungeklärt), Details im
+  PRIMER von `fdox-visuals`.

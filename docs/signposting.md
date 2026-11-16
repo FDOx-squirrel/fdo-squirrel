@@ -70,6 +70,24 @@ python tools\check_signposting.py --file output\fdo-landing-page.html
 Exit code 0 if `cite-as`, a `describedby` (or linkset) and an `item` (or
 linkset) are present, 1 otherwise, 2 on a request error.
 
+## What Zenodo serves
+
+Checked with `check_signposting.py` on 2026-11-16 against the CIIC 81 and
+Freshford FDOs (DOIs `10.5281/zenodo.18724635` and `10.5281/zenodo.22676379`,
+which redirect to the Zenodo records `22675886` and `22676380`). Both send in
+HTTP `Link` headers: `cite-as` (the version DOI), 15 `describedby` links
+(record metadata in many serialisations), `item` (the bundle ZIP,
+`application/zip`), `license`, `type` (`schema.org/Dataset` and `AboutPage`)
+and `rel="linkset"` (an RFC 9264 linkset). Both pass the Level 1 check
+without any help from the landing page.
+
+What is missing for RO-Crate retrieval: the ZIP `item` has no
+`profile="https://w3id.org/ro/crate"` attribute, and no `describedby` points
+at `ro-crate-metadata.json`. A Signposting client therefore sees a ZIP on
+Zenodo, not an RO-Crate. fdo-squirrel cannot change what Zenodo sends; the
+crate is found by opening the bundle. The landing page supplies those hints
+where fdo-squirrel controls the page (static hosting).
+
 ## Limits
 
 - HTML `<link>` elements are an allowed carrier but are read less widely by

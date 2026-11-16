@@ -2,7 +2,7 @@
 
 ![FDOx Squirrel logo](logo.png)
 
-**v1.1.0 – Reference implementation (ZIP-based FDOx → RDF, with RO-Crate export)**
+**v1.2.0 – Reference implementation (ZIP-based FDOx → RDF, with RO-Crate export)**
 
 > *FDOx (FAIR Data Object, exchangeable) is a reference implementation of the FAIR Digital Object (FDO) framework, emphasising exchangeability through Linked Open Data and a Wikibase-compatible RDF vocabulary.*
 
@@ -64,7 +64,17 @@ The input **must be a ZIP file** containing at least:
 
 ## Output
 
-Running the pipeline produces, in `output/`:
+Running the pipeline writes to `output/` (or `--outdir`; the folder is
+cleared at the start of every run):
+
+- the finished bundle, `<name>-fdo-bundle.zip`, which contains everything below;
+- four files next to it that are handy to open directly:
+  `fdo-metadata.ttl`, `ro-crate-metadata.json`, `rdf_modelling_report.html`
+  and `fdo_overview.png` (the PNG only if the Mermaid CLI is available);
+- `_work/`, holding every file the run generated (diagrams, `FDOx.yaml`, the
+  JSON report, landing page and linkset) for inspection.
+
+The generated files in detail:
 
 - **`fdo-metadata.ttl`**  
   RDF/Turtle representation of the FDOx, combining:
@@ -235,13 +245,14 @@ never the whole run.
 
 ## Status
 
-This is a **v1.1.0 reference implementation**.
+This is a **v1.2.0 reference implementation**.
 
 - ✔ stable RDF output
 - ✔ valid Turtle
 - ✔ deterministic identifiers
 - ✔ deterministic, byte-identical output across repeated runs against the same package (RDF, both provenance reports, the overview diagram, and the finished bundle ZIP)
 - ✔ explicit provenance
+- ✔ the RO-Crate export validates as RO-Crate 1.2 (`roc-validator`)
 - ✔ suitable for documentation and scientific publication
 
 The focus is **correctness, transparency, and explainability**, not performance or completeness.

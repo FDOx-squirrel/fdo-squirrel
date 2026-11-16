@@ -23,3 +23,14 @@ produced from an FDOx package, and additionally:
 
 The mapping from `MD.cff` / `CITATION.cff` is documented in
 [ro-crate-mapping.md](ro-crate-mapping.md).
+
+## Validation
+
+`roc-validator` 0.13.1 (profile `ro-crate-1.2`) reports a bundle built with
+fdo-squirrel v1.1.0 from a real 3D package (Q60) as a valid RO-Crate 1.2: 63
+checks passed, 0 failed, 3 skipped (2026-11-16). Its first run found one
+problem, fixed since: a `SoftwareApplication` must carry `version`, so the
+generating application now has both `version` and `softwareVersion`. The
+validator also warns that conformance to the FDOx profile IRI itself could
+not be verified; the IRI does not resolve yet (the w3id registration is an
+open point in `PRIMER.md`).
