@@ -1339,6 +1339,109 @@ def resolve_dataset_id(cw_id: str, package_source: str) -> str:
     return f"urn:fdo-squirrel:unpublished/{slug}"
 
 
+def derive_creators(
+    citation_raw: Optional[Dict[str, Any]],
+    fallback: List[Tuple[str, str]],
+) -> Tuple[List[Tuple[str, str]], bool]:
+    """
+    Creators of the dataset as (iri, label) pairs: derived from
+    CITATION.cff's `authors` when that yields anything, otherwise
+    `fallback` (the MD.cff creators). Second return value is True when the
+    CITATION.cff path was taken.
+
+    Extracted unchanged from crosswalk_to_rdf_turtle() in S22 so that the
+    RO-Crate export (fdo_rocrate.py) emits exactly the creator IRIs the TTL
+    does - two independently maintained copies of this rule are the kind of
+    drift S21 already had to clean up once for the file-exclusion lists.
+    """
+    derived: List[Tuple[str, str]] = []
+    if isinstance(citation_raw, dict):
+        authors = citation_raw.get("authors")
+        if isinstance(authors, list):
+            for a in authors:
+                if not isinstance(a, dict):
+                    continue
+                orcid = a.get("orcid")
+                family = a.get("family-names")
+                given = a.get("given-names")
+                name = a.get("name")
+                label = None
+                if isinstance(name, str) and name.strip():
+                    label = name.strip()
+                elif isinstance(family, str) and isinstance(given, str):
+                    label = f"{family.strip()}, {given.strip()}"
+                elif isinstance(family, str) and family.strip():
+                    label = family.strip()
+
+                if isinstance(orcid, str) and orcid.strip().startswith("http"):
+                    derived.append((orcid.strip(), label or orcid.strip()))
+                elif label:
+                    hid = hashlib.sha256(label.encode("utf-8")).hexdigest()[:16]
+                    derived.append((f"urn:fdo-squirrel:person/{hid}", label))
+
+    if derived:
+        return derived, True
+    return list(fallback), False
+
+
+def describe_package_files(
+    info: Optional[Dict[str, Any]], fdo_type: str
+) -> List[Dict[str, Any]]:
+    """
+    The files of the original package as plain dicts - name, size, sha256,
+    mediaType, role - using the same hashing, media-type detection and
+    classification_rules.yaml role classification the TTL's
+    dcat:Distribution entries use (S22, PRIMER.md). Sorted by name so the
+    result is deterministic regardless of ZIP member order.
+    """
+    rules_cfg = _load_classification_rules()
+    out: List[Dict[str, Any]] = []
+    for m in _zip_members_with_hashes(info):
+        name = m.get("name") or ""
+        if not name:
+            continue
+        out.append(
+            {
+                "name": name,
+                "size": m.get("size") if isinstance(m.get("size"), int) else None,
+                "sha256": m.get("sha256"),
+                "mediaType": _media_type(name),
+                "role": _classify_role(name, fdo_type, rules_cfg),
+            }
+        )
+    return sorted(out, key=lambda d: d["name"])
+
+
+def describe_local_files(paths: List[Path], fdo_type: str) -> List[Dict[str, Any]]:
+    """
+    Same dict shape as describe_package_files(), for files fdo-squirrel
+    wrote itself (the generated companion files that end up at the root of
+    the finished bundle). Missing paths are skipped. Sorted by name.
+    """
+    rules_cfg = _load_classification_rules()
+    out: List[Dict[str, Any]] = []
+    for p in paths:
+        if not p.exists():
+            continue
+        data = p.read_bytes()
+        out.append(
+            {
+                "name": p.name,
+                "size": len(data),
+                "sha256": hashlib.sha256(data).hexdigest(),
+                "mediaType": _media_type(p.name),
+                "role": _classify_role(p.name, fdo_type, rules_cfg),
+            }
+        )
+    return sorted(out, key=lambda d: d["name"])
+
+
+def spdx_license_url(license_value: Any) -> Optional[str]:
+    """Public alias of _spdx_url() (S22): the RO-Crate export resolves the
+    licence IRI exactly like the TTL does."""
+    return _spdx_url(license_value)
+
+
 def crosswalk_to_rdf_turtle(
     cw: CrosswalkRecord,
     citation_triples: list[str],
@@ -1515,34 +1618,12 @@ def crosswalk_to_rdf_turtle(
         )
 
     # Creators (dataset -> persons) derived from CITATION.cff (ZIP) if possible
-    derived_creators: List[Tuple[str, str]] = []
-    if isinstance(citation_raw, dict):
-        authors = citation_raw.get("authors")
-        if isinstance(authors, list):
-            for a in authors:
-                if not isinstance(a, dict):
-                    continue
-                orcid = a.get("orcid")
-                family = a.get("family-names")
-                given = a.get("given-names")
-                name = a.get("name")
-                label = None
-                if isinstance(name, str) and name.strip():
-                    label = name.strip()
-                elif isinstance(family, str) and isinstance(given, str):
-                    label = f"{family.strip()}, {given.strip()}"
-                elif isinstance(family, str) and family.strip():
-                    label = family.strip()
-
-                if isinstance(orcid, str) and orcid.strip().startswith("http"):
-                    derived_creators.append((orcid.strip(), label or orcid.strip()))
-                elif label:
-                    hid = hashlib.sha256(label.encode("utf-8")).hexdigest()[:16]
-                    derived_creators.append((f"urn:fdo-squirrel:person/{hid}", label))
-
-    creators_to_use = (
-        derived_creators if derived_creators else list(getattr(cw, "creators", []))
+    # (extracted into derive_creators() in S22 so the RO-Crate export uses
+    # exactly the same creator IRIs as this TTL - behaviour unchanged)
+    creators_to_use, creators_from_citation = derive_creators(
+        citation_raw, list(getattr(cw, "creators", []))
     )
+    derived_creators = creators_to_use if creators_from_citation else []
 
     for cid, _clabel in creators_to_use:
         if isinstance(cid, str) and cid.startswith(("http://", "https://", "urn:")):

@@ -68,6 +68,9 @@ FDO_SQUIRREL_OWN_FILES = {
     "rdf_modelling_report.json",
     "rdf_modelling_report.html",
     "fdox.yaml",
+    "ro-crate-metadata.json",  # S22: RO-Crate view of the bundle
+    "fdo-landing-page.html",  # S24: FAIR Signposting landing page
+    "fdo-linkset.json",  # S24: Level 2 linkset (only with --base-url)
     "fdo_overview.mermaid",
     "fdo_overview.png",  # older naming convention, found in Flo's local raw-fdo test zip
     "fdo_files_roles_graph.svg",

@@ -14,8 +14,17 @@ from fdo import (
     build_generated_distributions_ttl,
     resolve_dataset_id,
     fdo_squirrel_version,
+    describe_package_files,
+    describe_local_files,
 )
 from fdo_manifest import write_fdox_yaml
+from fdo_rocrate import CRATE_FILENAME, build_ro_crate, write_ro_crate
+from fdo_signposting import (
+    LANDING_FILENAME,
+    LINKSET_FILENAME,
+    normalise_base_url,
+    write_signposting,
+)
 from fdo_files_roles_graph import write_files_roles_graph
 from fdo_ttl_snippet import write_ttl_snippet_cards
 from fdo_md_cff_diagram import write_md_cff_diagram
@@ -370,7 +379,18 @@ def main():
     # which is what a scripted release step needs to find it again.
     outdir_parser = argparse.ArgumentParser(add_help=False)
     outdir_parser.add_argument("--outdir", "-o", default=None)
+    outdir_parser.add_argument(
+        "--base-url",
+        default=None,
+        help=(
+            "Public URL the finished bundle will be published under "
+            "(folder URL, e.g. https://example.org/fdo/ciic81). Makes the "
+            "signposting links absolute and additionally writes the Level 2 "
+            "linkset fdo-linkset.json (S24)."
+        ),
+    )
     outdir_args, _ = outdir_parser.parse_known_args()
+    base_url = normalise_base_url(outdir_args.base_url)
     output_dir = Path(outdir_args.outdir) if outdir_args.outdir else Path.cwd() / "output"
     import shutil
 
@@ -552,6 +572,86 @@ def main():
         )
         if p.exists()
     ] + [p for p in ttl_snippet_files if p.exists()]
+
+    # --------------------------------------------------
+    # Name of the finished bundle ZIP - needed this early because the
+    # signposting links (S24) may point at it.
+    # --------------------------------------------------
+    bundle_stem = Path(package_source.rstrip("/")).name
+    if bundle_stem.lower().endswith(".zip"):
+        bundle_stem = bundle_stem[: -len(".zip")]
+    bundle_stem = re.sub(r"[^A-Za-z0-9._-]+", "_", bundle_stem) or "fdo-package"
+    bundle_path = output_dir / f"{bundle_stem}-fdo-bundle.zip"
+
+    # --------------------------------------------------
+    # Package file list for the two outputs below. Same supersede rule
+    # build_finished_bundle() applies: a package member whose basename
+    # equals a generated file's is replaced. NB: the generated names are
+    # matched by *basename anywhere in the package*, which is why the
+    # landing page is not called index.html - that would drop the 3DHOP
+    # viewer's viewer/index.html from the bundle.
+    # --------------------------------------------------
+    package_files = None
+    try:
+        superseded_names = (
+            {p.name for p in generated_files}
+            | {CRATE_FILENAME, LANDING_FILENAME, LINKSET_FILENAME}
+        )
+        package_files = [
+            f
+            for f in describe_package_files(info, cw.fdo_type)
+            if Path(f["name"]).name not in superseded_names
+        ]
+    except Exception as e:
+        print(f"⚠ Package file list unavailable, RO-Crate and signposting skipped: {e}")
+
+    # --------------------------------------------------
+    # FAIR Signposting (S24, PRIMER.md): landing page with <link> signposts,
+    # plus the Level 2 linkset when --base-url is given. Written before the
+    # crate so the crate can list both like any other companion file.
+    # Best-effort, like the diagrams.
+    # --------------------------------------------------
+    if package_files is not None:
+        try:
+            for p in write_signposting(
+                output_dir,
+                cw,
+                resolved_id=cw.id,
+                citation_raw=cff,
+                package_files=package_files,
+                base_url=base_url,
+                bundle_name=bundle_path.name,
+            ):
+                generated_files.append(p)
+                print(f"✔ Signposting file written to {p}")
+        except Exception as e:
+            print(f"⚠ Signposting skipped: {e}")
+
+    # --------------------------------------------------
+    # RO-Crate 1.2 view of the finished bundle (S22, PRIMER.md): one
+    # ro-crate-metadata.json at the bundle root. Written *before* the
+    # generated-file distributions below, so it is described in the TTL
+    # like every other companion file - which is why the crate itself
+    # carries no size/hash for fdo-metadata.ttl (finalised afterwards; see
+    # fdo_rocrate.py). Best-effort: a failure here never costs the run.
+    # --------------------------------------------------
+    ro_crate_path = output_dir / CRATE_FILENAME
+    if package_files is not None:
+        try:
+            crate = build_ro_crate(
+                cw,
+                resolved_id=cw.id,
+                citation_raw=cff,
+                package_files=package_files,
+                generated_files=describe_local_files(generated_files, cw.fdo_type),
+                fdo_squirrel_version=fdo_squirrel_version(),
+            )
+            write_ro_crate(ro_crate_path, crate)
+            generated_files.append(ro_crate_path)
+            print(f"✔ RO-Crate metadata written to {ro_crate_path}")
+        except Exception as e:
+            print(f"⚠ RO-Crate metadata skipped: {e}")
+
     extra_ttl = build_generated_distributions_ttl(
         f"<{cw.id}>", cw.fdo_type, [(p, None) for p in generated_files]
     )
@@ -571,11 +671,6 @@ def main():
     # self-contained, ready-to-(re)publish ZIP.
     # --------------------------------------------------
     original_zip = info.get("package_local_path")
-    bundle_stem = Path(package_source.rstrip("/")).name
-    if bundle_stem.lower().endswith(".zip"):
-        bundle_stem = bundle_stem[: -len(".zip")]
-    bundle_stem = re.sub(r"[^A-Za-z0-9._-]+", "_", bundle_stem) or "fdo-package"
-    bundle_path = output_dir / f"{bundle_stem}-fdo-bundle.zip"
 
     result = build_finished_bundle(
         original_zip_path=Path(original_zip) if original_zip else None,

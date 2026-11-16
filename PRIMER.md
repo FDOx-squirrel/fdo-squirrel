@@ -270,6 +270,15 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | `?`-Platzhalter in der Core-Metadata-Box bei unkuratierten Paketen (S21) | Per Rückfrage mit drei Optionen geklärt: optionale MD.cff-Blöcke (heritage_object/spatial/temporal) komplett weglassen, wenn ganz leer; verbleibende einzelne Lücken als kursives `*n/a*` statt `?` — Flos Entscheidung, Kombination aus zwei der drei angebotenen Optionen | 2026-09-09 |
 | Erster Release nach diesem PRIMER: `v0.4.0` oder `v1.0.0`? (S10) | `v1.0.0` — Flos Entscheidung nach Rückfrage, siehe S10 Punkt 1: erster echter Ende-zu-Ende-Beweis gegen Produktionsdaten, Timing passt zur Konferenz | 2026-09-09 |
 | `CITATION.cff`s Zenodo-DOI beim Release aktualisieren? (S10) | Nein, nicht in diesem Patch — unklar ob Concept- oder versionsspezifische DOI, lässt sich vor dem echten Zenodo-Archivierungslauf nicht verlässlich bestimmen. Flo aktualisiert von Hand nach dem GitHub-Release, gleiche Handarbeit-Konvention wie `fdo-3d-packager`s `MD.cff.id` | 2026-09-09 |
+| RO-Crate in das FDOx-Bundle aufnehmen (S22) | Ja — Flos Anstoß 2026-11-13: das Bundle-ZIP um das aufkommende RO-Crate-Konzept erweitern, in einem Patch-ZIP mit neuem Tag und Release am Ende | 2026-11-13 |
+| Rolle des Crates gegenüber der TTL (S22) | Zusätzliche, generierte *Sicht*, kein Ersatz: `fdo-metadata.ttl` bleibt verlustfreier, CRM-verankerter Träger; das Crate bildet nur den Kern ab, den RO-Crate/schema.org ausdrücken kann (Mapping und Auslassungen: `docs/ro-crate-mapping.md`). Claude-Vorschlag, von Flo noch zu bestätigen | 2026-11-13, Vorschlag |
+| Crate ohne neue Pflicht-Abhängigkeit (S22) | Reines Standardbibliotheks-JSON (`fdo_rocrate.py`), kein rdflib; Creator-, Lizenz- und Dateifakten über gemeinsame Helfer (`derive_creators`, `spdx_license_url`, `describe_*` in `fdo/fdo_rdf.py`), damit TTL und Crate nicht auseinanderlaufen. Die Creator-Extraktion wurde dafür unverändert aus `crosswalk_to_rdf_turtle()` herausgezogen (TTL vorher/nachher byte-identisch geprüft). Claude-Vorschlag, von Flo noch zu bestätigen | 2026-11-13, Vorschlag |
+| Hash/Größe von `fdo-metadata.ttl` im Crate (S22) | Weggelassen: die TTL wird nach dem Crate finalisiert (sie führt das Crate als `dcat:Distribution`), ein Manifest kann seinen eigenen Endstand nicht hashen — dieselbe Einschränkung wie in `build_generated_distributions_ttl()`. Alternative wäre, das Crate nach der TTL zu schreiben und die TTL dann ohne Eintrag für das Crate zu lassen; verworfen, weil dann nicht mehr jede Bundle-Datei in RDF modelliert wäre. Claude-Vorschlag, von Flo noch zu bestätigen | 2026-11-13, Vorschlag |
+| FDOx-Profil von RO-Crate (S22) | Eigenes Profil `https://w3id.org/fdo-squirrel/profile/ro-crate/1.0` (`docs/ro-crate-profile.md`), im Crate über `conformsTo` am Root Data Entity deklariert (RO-Crate-1.2-Profilmechanismus). Der w3id-Pfad `/profile/` ist noch nicht registriert, Teil D. Claude-Vorschlag, von Flo noch zu bestätigen | 2026-11-13, Vorschlag |
+| Versionssprung für S22 (S23) | `v1.1.0` (Minor): rückwärtskompatibel, nur zusätzliche Ausgabedatei plus zusätzlicher `dcat:Distribution`-Eintrag in der TTL. Claude-Vorschlag, von Flo noch zu bestätigen | 2026-11-13, Vorschlag |
+| Signposting aufnehmen (S24) | Ja, alle drei Teile — Flos Entscheidung 2026-11-13: Prüfskript, Doku und Landing-Page-Generator; zusammen mit S22 in einem Patch und einem Release `v1.1.0` statt zwei | 2026-11-13 |
+| Landing-Page-Name (S24) | `fdo-landing-page.html`, nicht `index.html`: die Supersede-Regel in `build_finished_bundle()` arbeitet über den Basename an beliebiger Stelle des Pakets, ein `index.html` würde `viewer/index.html` des 3DHOP-Viewers aus dem Bundle werfen. Entsprechend `fdo-linkset.json` statt `linkset.json`. Claude-Vorschlag, von Flo noch zu bestätigen | 2026-11-13, Vorschlag |
+| Landing Page immer, Linkset nur mit `--base-url` (S24) | Die Seite funktioniert mit relativen Links auch ohne bekannte URL (ein Ordner, in dem das Bundle entpackt liegt); das Linkset braucht absolute Anker, daher nur mit `--base-url`. `--base-url` löst außerdem den `item`-Link auf das Bundle-ZIP und den `rel="linkset"`-Link aus. Claude-Vorschlag, von Flo noch zu bestätigen | 2026-11-13, Vorschlag |
 
 ## A5. Was in welchem Chat hochgeladen wird
 
@@ -311,6 +320,9 @@ groß sein (3D-Modelle im Beispielpaket).
 | S19 | JPG-Ausgabe entfernen: `fdo_overview.*` + drei `fdo_ttl_snippet_*.*`-Karten nur noch PNG+SVG, Pillow-Abhängigkeit entfernt | fdo-squirrel | `fdo-3d-packager`s S7-Fund (dieselbe Fundstelle wie S18) | **erledigt 2026-09-09** |
 | S20 | `creators[].id` optional machen: `require_id_label()` → `resolve_id_label()`, Fallback-IRI aus `label`, deckt `creators`/`contributors`/`publishers` gleichermaßen ab | fdo-squirrel | `fdo-3d-packager`s S9-Fund | **erledigt 2026-09-09** |
 | S21 | `fdo_mermaid.py`: `auxiliary`-Rolle in `ROLE_STYLES_3D` ergänzt, CC-Lizenz-URLs erkannt, Selbstausschluss-Filter von Extension- auf Dateinamen-Liste umgestellt (fand `viewer/index.html` fehlend) | fdo-squirrel | `fdo-3d-packager`-Handoff nach dessen Pin-Bump-Test | **erledigt 2026-09-09** (Design-Frage zu `?`-Platzhaltern separat offen) |
+| S22 | RO-Crate 1.2 als zusätzliche Sicht auf das Bundle: `ro-crate-metadata.json` im Bundle-Root, aus denselben Quellen wie die TTL | fdo-squirrel | — | **erledigt 2026-11-13** (Validator-Lauf mit `roc-validator` steht bei Flo aus, Teil D) |
+| S24 | FAIR Signposting: `fdo-landing-page.html` mit `<link>`-Signposts (+ `fdo-linkset.json` mit `--base-url`), Prüfskript `tools/check_signposting.py`, `docs/signposting.md` | fdo-squirrel | S22 | **erledigt 2026-11-13** (Skript gegen echte Zenodo-Records steht bei Flo aus, Teil D) |
+| S23 | Release `v1.1.0` (Versionsbump, Tag, GitHub-Release → Zenodo), enthält S22 und S24 | fdo-squirrel | S22, S24, von Flo lokal geprüft | **vorbereitet 2026-11-13** (Tag + Release von Hand, Befehle in `PATCH-README.md`) |
 
 S2, S3, S4 und S5 sind voneinander unabhängig und können in beliebiger
 Reihenfolge angegangen werden. S6, S7, S8 hängen an einem echten Lauf mit
@@ -1468,6 +1480,147 @@ tatsächlich stammen, nicht aus der TTL selbst):
   mitgeschickt, nur nachgebaut). Flo bestätigt den visuellen Effekt
   beim nächsten echten Lauf.
 
+## S22 — RO-Crate 1.2 als Sicht auf das Bundle
+
+**Ziel:** das fertige Bundle-ZIP soll zugleich ein RO-Crate sein — Flos
+Anstoß 2026-11-13: das Konzept kommt auf (RO-Crate 1.2 ist seit Juni 2025
+stabil, mit Profile Crates und "Webby FDO" per FAIR Signposting), und
+`fdo-squirrel` soll es bedienen, ohne die TTL anzutasten.
+
+**Uploads:** Repo-Bundle (A5).
+
+**Substanz:**
+- Neues Modul `fdo_rocrate.py` erzeugt `ro-crate-metadata.json` (Context
+  `https://w3id.org/ro/crate/1.2/context` plus die Präfixe `crm`, `crmdig`,
+  `fdo`, `prof`), nur Standardbibliothek, deterministisch (sortierter
+  Graph, feste Schlüsselreihenfolge, keine Uhr).
+- Quellen wie die TTL: `cw` (MD.cff), CITATION.cff, Dateiliste des Pakets.
+  Dafür drei neue öffentliche Helfer in `fdo/fdo_rdf.py`
+  (`derive_creators`, `describe_package_files`, `describe_local_files`,
+  `spdx_license_url`); die Creator-Extraktion wurde unverändert aus
+  `crosswalk_to_rdf_turtle()` herausgezogen.
+- `main.py` schreibt das Crate nach den Companion-Dateien und vor
+  `build_generated_distributions_ttl()`; es wird damit wie jede andere
+  generierte Datei zur `dcat:Distribution` und Teil des Bundles. Fehler
+  im Crate-Schritt kosten nie den Lauf (Warnung, wie bei den Diagrammen).
+- Supersede-Regel wie in `build_finished_bundle()`: Paketmitglieder mit
+  gleichem Basename wie eine generierte Datei (auch ein altes
+  `ro-crate-metadata.json`) kommen nicht ins Crate.
+- `ro-crate-metadata.json` in `FDO_SQUIRREL_OWN_FILES`
+  (`fdo_files_roles_common.py`), damit ein zurückgefüttertes Bundle die
+  Diagramme nicht verfälscht.
+- Doku: `docs/ro-crate-mapping.md`, `docs/ro-crate-profile.md`; README
+  Output-Abschnitt. Erste Tests des Repos: `tests/test_ro_crate.py`
+  (`python -m unittest discover -s tests`).
+
+**Abnahme:** `ro-crate-metadata.json` liegt im Bundle-Root; jede andere
+Bundle-Datei steht im Crate mit passender Größe und passendem sha256
+(außer `fdo-metadata.ttl`, siehe A4); zwei Läufe sind bytegleich
+(Crate, TTL, FDOx.yaml, Bundle-ZIP); `fdo-metadata.ttl` unterscheidet sich
+von vorher nur um den Eintrag für das Crate; `roc-validator` läuft auf
+einem entpackten Bundle ohne Fehler (bei Flo, Teil D).
+
+### Erledigt 2026-11-13
+
+Umgesetzt wie oben. Mit einem synthetischen 3D-Testpaket (inkl. altem
+`fdo-metadata.ttl` im Paket zur Prüfung der Supersede-Regel) in der
+Sandbox geprüft: Refactor der Creator-Logik ändert TTL und Bundle-ZIP
+nicht (md5 identisch vorher/nachher); Crate gegen den echten
+Bundle-Inhalt abgeglichen (0 fehlende Einträge, 0 Hash-/Größenabweichungen);
+zwei Läufe bytegleich; das Crate lässt sich mit rdflib als JSON-LD parsen
+(mit einem Stand-in für den Remote-Kontext, siehe unten) und alle Typen
+(inkl. `crm:`, `crmdig:`, `prof:Profile`, `fdo:`) lösen auf; 10 Unit-Tests
+grün. Der Unterschied der TTL zu vorher ist exakt ein neuer
+`dcat:Distribution`-Block samt Eintrag in der `dcat:distribution`-Liste.
+
+**Nicht in der Sandbox geprüft:** der offizielle `roc-validator`. Er holt
+den RO-Crate-Kontext aus dem Netz (`w3id.org`), und der ist in der Sandbox
+gesperrt. Das JSON-LD-Parsing oben lief deshalb mit
+`{"@vocab": "http://schema.org/"}` statt des echten RO-Crate-Kontexts.
+Ob `sha256`/`contentSize`/`prof:Profile` dort anders heißen oder
+abweichend definiert sind, zeigt erst Flos Validator-Lauf (Befehl in
+`PATCH-README.md`). Auch nicht geprüft: echte Pakete (CIIC 81,
+Freshford) — nur das synthetische Testpaket.
+
+## S23 — Release v1.1.0
+
+**Ziel:** S22 und S24 als Release `v1.1.0` veröffentlichen (Zenodo-Kopplung
+wie S10).
+
+**Substanz:** `pyproject.toml` (`version`), `CITATION.cff` (`version`,
+`date-released` 2026-11-13) und `README.md` (Kopfzeile, Status) auf
+`1.1.0`. `fdo_squirrel_version()` zieht die Zahl zur Laufzeit selbst (S10).
+Release-Text in `docs/releases/v1.1.0.md`. Tag und GitHub-Release macht Flo
+von Hand, Befehle in `PATCH-README.md` (Release-Event, nicht nur Tag, wie
+in S10 geklärt). `CITATION.cff`s DOI bleibt wie in S10 Punkt 3 unverändert,
+Flo prüft sie nach der Zenodo-Archivierung von Hand.
+
+**Abnahme:** drei Versionsangaben zeigen `1.1.0`; Tag `v1.1.0` annotiert
+und gepusht; GitHub-Release veröffentlicht; `FDOx.yaml` eines neuen Laufs
+nennt `version: 1.1.0`.
+
+### Vorbereitet 2026-11-13
+
+Versionsangaben und Release-Text im Patch. Tag/Release selbst nicht in der
+Sandbox ausführbar (kein Push-Zugriff), Status wird erst nach Flos
+Rückmeldung auf **erledigt** gesetzt.
+
+## S24 — FAIR Signposting
+
+**Ziel:** das Bundle ohne eigene HTTP-Header "webby" machen: typisierte
+Links (FAIR Signposting) von einer Landing Page auf Identifier,
+Metadaten und Inhalt — Flos Anstoß 2026-11-13 im Anschluss an S22
+(RO-Crate 1.2 beschreibt den Abruf eines Crates per Signposting).
+
+**Uploads:** Repo-Bundle (A5).
+
+**Substanz (Flo: "alle drei"):**
+- **Generator** `fdo_signposting.py`: schreibt immer
+  `fdo-landing-page.html` mit `<link>`-Signposts im Head (`cite-as` nur bei
+  `http(s)`-IRI, `describedby` auf Crate und TTL, `license`, `author` für
+  Creator mit `http(s)`-IRI, `type` schema.org + FDOx-Klasse, `item` je
+  Paketdatei). Mit `--base-url` (neu in `main.py`) sind die Links absolut,
+  zusätzlich entstehen `fdo-linkset.json` (RFC 9264, Level 2, mit
+  `collection`-Rücklinks), ein `item` für das Bundle-ZIP und
+  `rel="linkset"`. Nur Standardbibliothek, deterministisch.
+- **Reihenfolge in `main.py`:** Paketdateiliste einmal berechnen →
+  Signposting → Crate → TTL-Distributionen. Das Crate führt Landing Page
+  und Linkset damit wie jede Companion-Datei; beide stehen in
+  `FDO_SQUIRREL_OWN_FILES`. Das Paketdateilisten-Berechnen wurde dafür aus
+  dem Crate-Schritt herausgezogen (S22), das Bundle-ZIP-Namen früher
+  berechnet.
+- **Prüfskript** `tools/check_signposting.py`: HEAD/GET auf eine URL,
+  liest Link-Header und HTML-`<link>`, optional das Linkset (`--linkset`),
+  meldet Level-1-Relationen und ob ein RO-Crate per `describedby`/`item`
+  abrufbar ist; `--file` prüft eine lokale Landing Page offline. ASCII-
+  Ausgabe (Windows-cmd-sicher), Exitcode 0/1/2.
+- **Doku** `docs/signposting.md` (zwei Veröffentlichungswege: Zenodo/
+  InvenioRDM macht Signposting selbst, statisches Hosting braucht die
+  `<link>`-Variante), README-Output-Abschnitt, Tests
+  `tests/test_signposting.py`.
+
+**Abnahme:** `fdo-landing-page.html` liegt im Bundle, `viewer/index.html`
+des Pakets bleibt erhalten; `check_signposting.py --file` meldet für die
+generierte Seite alle drei Level-1-Checks OK; mit `--base-url` sind alle
+Links absolut und `fdo-linkset.json` ist gültiges JSON mit Rücklink je
+`item`; zwei Läufe bytegleich; das Prüfskript läuft auf Flos Windows-cmd
+gegen echte Zenodo-Records (Teil D).
+
+### Erledigt 2026-11-13
+
+Umgesetzt wie oben. Mit dem synthetischen Testpaket in der Sandbox
+geprüft: Landing Page und Linkset erzeugt (mit und ohne `--base-url`),
+`viewer/index.html` bleibt im Bundle, zwei Läufe bytegleich (Crate, TTL,
+Landing Page, Bundle-ZIP); das Crate führt Landing Page und Linkset; 23
+Unit-Tests grün; das Prüfskript gegen die generierte Seite (offline) und
+gegen einen lokalen Server mit mehreren `Link`-Headern, einem Linkset und
+HTML-`<link>` geprüft.
+
+**Nicht in der Sandbox geprüft:** das Prüfskript gegen echte Adressen
+(Netz gesperrt) — was Zenodo für CIIC 81/Freshford tatsächlich ausliefert,
+ist offen; das Veröffentlichen auf GitHub Pages; ob externe Clients
+(`signposting`-Bibliothek, F-UJI) die `<link>`-Variante auswerten.
+
 ## S9 — README.md auffrischen
 
 **Ziel:** die drei durch S1–S5 entstandenen Diskrepanzen zwischen
@@ -1832,8 +1985,10 @@ nicht sofort wieder veraltet ist (S9 hat genau das kritisiert).
   `references`, `type`) — `_normalize_citation()` reicht sie seit S3
   durch, aber `crosswalk.fdo-metadata.yaml` hat für keins ein RDF-Ziel.
   Eigene Entscheidung, falls gewünscht (A4).
-- **Keine Tests, keine CI** (A1 Befund 5) — nicht bewertet, ob das ein
-  Problem ist; einfach noch nie Thema gewesen.
+- **Tests und CI** (A1 Befund 5): seit S22 gibt es erste offline-Tests
+  (`tests/test_ro_crate.py`, nur für den Crate-Export); eine CI, die sie
+  (und einen Lauf gegen ein Beispielpaket) ausführt, gibt es weiterhin
+  nicht. `example_fdo/` taugt dafür nicht (siehe erster Punkt).
 - **`fdo_overview.png` braucht `mmdc`/Node** (A1 Befund 4, Dateiendung
   seit S19 `.png` statt `.jpg`) — bewusste Abwägung laut README, kein
   Widerspruch zu lösen.
@@ -1850,3 +2005,30 @@ nicht sofort wieder veraltet ist (S9 hat genau das kritisiert).
   ganz deckungsgleich. Nicht Teil von S20 (bewusst nicht angefasst,
   siehe dort Punkt 4) — eigene Entscheidung/eigener Schritt, falls
   gewünscht.
+- **`roc-validator`-Lauf steht aus** (S22): in der Sandbox nicht möglich
+  (Netz-Sperre für den RO-Crate-Kontext). Flo führt ihn lokal aus (Befehl
+  in S22s `PATCH-README.md`) und meldet das Ergebnis; Befunde (z. B.
+  Termnamen für `sha256`) fließen in einen Nachtrag zu S22.
+- **w3id-Pfad `/profile/` registrieren** (S22): das FDOx-Profil
+  `https://w3id.org/fdo-squirrel/profile/ro-crate/1.0` löst noch nicht
+  auf; ohne Redirect (PR im `perma-id/w3id.org`-Repo) ist es nur ein
+  Name. Das Crate verweist deshalb zusätzlich per `url` auf
+  `docs/ro-crate-profile.md`.
+- **Nicht abgebildete MD.cff-Felder im Crate** (S22): `temporal`,
+  `heritage_object`, `technique`, `funding`, `related_resources`, WKT,
+  Keyword-IRIs, weitere Identifier-Schemata (Liste in
+  `docs/ro-crate-mapping.md`). Eigene Entscheidung pro Feld, falls
+  gewünscht.
+- **`check_signposting.py` gegen echte Records laufen lassen** (S24): Flo
+  führt es lokal auf Windows-cmd gegen die Zenodo-DOIs von CIIC 81 und
+  Freshford aus (`--linkset`), Ergebnis zeigt, was Zenodo tatsächlich
+  sendet (`cite-as`, `describedby`, `item` fürs ZIP, `profile`-Attribut?).
+  Befunde fließen in einen Nachtrag zu S24.
+- **Landing Page auf statischem Hosting ausprobieren** (S24): Bundle mit
+  `--base-url` bauen, entpacken, auf GitHub Pages stellen und das
+  Prüfskript dagegen laufen lassen; offen, ob Clients (F-UJI,
+  `signposting`-Bibliothek) die `<link>`-Variante auswerten.
+- **Registry/`fdo-3d-packager` und das Crate** (S22): ob die Registry das
+  Crate künftig mit einliest und ob `fdo-3d-packager` es in seinen
+  Paketen vorhalten soll, ist offen — gehört in jeweils eigene Chats
+  (A3, ein Repo pro Chat).

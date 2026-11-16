@@ -2,7 +2,7 @@
 
 ![FDOx Squirrel logo](logo.png)
 
-**v1.0.0 – Reference implementation (ZIP-based FDOx → RDF)**
+**v1.1.0 – Reference implementation (ZIP-based FDOx → RDF, with RO-Crate export)**
 
 > *FDOx (FAIR Data Object, exchangeable) is a reference implementation of the FAIR Digital Object (FDO) framework, emphasising exchangeability through Linked Open Data and a Wikibase-compatible RDF vocabulary.*
 
@@ -88,6 +88,23 @@ Running the pipeline produces, in `output/`:
   inferred from telltale files like a 3DHOP viewer plus Nexus meshes).
   Distinct from the modelling report above: this is about how the FDO
   itself was built, not which source field mapped to which RDF property.
+
+- **`ro-crate-metadata.json`**  
+  An [RO-Crate 1.2](https://w3id.org/ro/crate/1.2) view of the finished
+  bundle: with this file at its root, the bundle ZIP is an RO-Crate (and,
+  published with FAIR Signposting, a lightweight "Webby" FDO). Generated
+  from the same inputs as `fdo-metadata.ttl`, which stays the lossless
+  carrier — see [docs/ro-crate-mapping.md](docs/ro-crate-mapping.md) and
+  the [FDOx profile](docs/ro-crate-profile.md).
+
+- **`fdo-landing-page.html`** *(and `fdo-linkset.json` with `--base-url`)*  
+  A small landing page whose `<head>` carries
+  [FAIR Signposting](https://signposting.org/FAIR/) links (`cite-as`,
+  `describedby`, `item`, `license`, `author`, `type`) for static hosting
+  such as GitHub Pages; with `--base-url` the links are absolute and an
+  RFC 9264 linkset (Level 2) is written too. See
+  [docs/signposting.md](docs/signposting.md) and `tools/check_signposting.py`,
+  which reports what a URL actually serves.
 
 - **`fdo_overview.mermaid`**  
   A Mermaid flowchart summarising the FDO (core metadata, distributions by role)
@@ -218,7 +235,7 @@ never the whole run.
 
 ## Status
 
-This is a **v1.0.0 reference implementation**.
+This is a **v1.1.0 reference implementation**.
 
 - ✔ stable RDF output
 - ✔ valid Turtle

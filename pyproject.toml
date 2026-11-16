@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fdo-squirrel"
-version = "1.0.1"
+version = "1.1.0"
 description = "FAIR Data Object, exchangeable (FDOx) reference implementation: ZIP package -> RDF"
 readme = "README.md"
 license = { text = "MIT" }
@@ -37,6 +37,8 @@ py-modules = [
     "fdo_mermaid",
     "fdo_finalize",
     "fdo_manifest",
+    "fdo_rocrate",
+    "fdo_signposting",
     "fdo_visuals_utils",
     "fdo_files_roles_common",
     "fdo_ttl_snippet",
