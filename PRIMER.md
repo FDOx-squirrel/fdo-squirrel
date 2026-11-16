@@ -328,7 +328,8 @@ groß sein (3D-Modelle im Beispielpaket).
 | S24 | FAIR Signposting: `fdo-landing-page.html` mit `<link>`-Signposts (+ `fdo-linkset.json` mit `--base-url`), Prüfskript `tools/check_signposting.py`, `docs/signposting.md` | fdo-squirrel | S22 | **erledigt 2026-11-13**; Zenodo-Check 2026-11-16 (Nachtrag in S24) |
 | S23 | Release `v1.1.0` (Versionsbump, Tag, GitHub-Release → Zenodo), enthält S22 und S24 | fdo-squirrel | S22, S24, von Flo lokal geprüft | **erledigt 2026-11-16** (Commit `f10267f`, Tag `v1.1.0`, Zenodo-Version-DOI `10.5281/zenodo.24280786`) |
 | S25 | Output-Layout: Bundle + vier lose Dateien in `--outdir`, Rest in `_work/`; `.gitignore` (`output*/`, `out/`, `/fdo_overview.mermaid`); Doku-Nachtrag zu S22/S24 | fdo-squirrel | S22–S24 | **erledigt 2026-11-16** (Patch, von Flo noch anzuwenden) |
-| S26 | Release `v1.2.0` (Versionsbump, Tag, GitHub-Release), enthält S25; danach `fdo-3d-packager`-Pin auf `v1.2.0` | fdo-squirrel | S25, von Flo lokal geprüft | **vorbereitet 2026-11-16** (Tag + Release von Hand, Befehle in `PATCH-README.md`) |
+| S26 | Release `v1.2.0` (Versionsbump, Tag, GitHub-Release), enthält S25; danach `fdo-3d-packager`-Pin auf `v1.2.0` | fdo-squirrel | S25, von Flo lokal geprüft | **erledigt 2026-11-16** (Commit `6493f1c`, Tag `v1.2.0`, GitHub-Release; Zenodo archiviert) |
+| S27 | Korrektur `fdo_md_cff_graph.py`: Höhe des zentralen Knotens, Pfeilenden verteilt; Release `v1.2.1` | fdo-squirrel | S26 | **vorbereitet 2026-11-16** (Tag + Release von Hand, Befehle in `PATCH-README.md`) |
 
 S2, S3, S4 und S5 sind voneinander unabhängig und können in beliebiger
 Reihenfolge angegangen werden. S6, S7, S8 hängen an einem echten Lauf mit
@@ -1702,6 +1703,32 @@ dem Tag angewendet: ein Pin auf einen noch nicht existierenden Tag bricht
 
 Versionsangaben und Release-Text im Patch; Tag/Release nicht in der Sandbox
 ausführbar.
+
+## S27 — Grafik „MD.cff, filled out" (Knotengraph) und Release v1.2.1
+
+**Anlass:** Beim ersten echten Lauf mit v1.2.0 (Govan 5, über `fdo-3d-packager`)
+war der zentrale `MD_cff`-Knoten in `fdo_md_cff_graph.svg` rund 1000 px hoch
+und fast leer, die Pfeile liefen alle in einem Punkt zusammen.
+
+**Ursache:** `build_svg()` berechnete die Knotenhöhe aus **allen umgebrochenen
+Zeilen** der Kernfelder, gezeichnet wird aber **eine** abgeschnittene Zeile
+je Feld. Eine lange `description` (Govan 5: rund 1500 Zeichen) blähte den
+Knoten daher auf. Kurze Beschreibungen (Testpakete) fielen nicht auf.
+
+**Substanz:** Höhe = Anzahl der Felder; Pfeilenden verteilt entlang der Kante
+des Knotens statt alle in dessen Mittelpunkt (`end_y()`). Neuer Test
+`tests/test_md_cff_graph.py` (lange Beschreibung ändert die Knotenhöhe nicht;
+Knoten kompakt). Version 1.2.1 (`pyproject.toml`, `CITATION.cff`, README),
+`docs/releases/v1.2.1.md`. Das Bundle ändert sich nur in
+`fdo_md_cff_graph.svg`/`.png` (und dem Versionsstring in `FDOx.yaml`/Crate).
+
+**Abnahme:** der neue Test scheitert ohne den Fix und läuft mit ihm durch;
+die Grafik eines Laufs mit Govan 5 zeigt einen kompakten Knoten.
+
+### Vorbereitet 2026-11-16
+
+Im Sandkasten gegen den echten `MD.cff` aus Flos Govan-5-Bundle gerendert
+und angesehen. Tag/Release von Hand.
 
 ## S9 — README.md auffrischen
 

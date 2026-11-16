@@ -112,8 +112,11 @@ def build_svg(md: Dict[str, Any], title: str) -> Tuple[str, int, int]:
 
     # Central MD_cff node
     core_wrapped = [(label, wrap_text(value, 30)) for label, value in core_rows]
-    core_lines = sum(len(v) for _, v in core_wrapped)
-    center_h = 46 + core_lines * _ROW_H + 14
+    # One drawn line per field (the value is truncated to fit, see below),
+    # so the node's height follows the number of fields - not the number of
+    # wrapped lines, which made a long description stretch the node to
+    # 1000 px with nothing in it (found with Govan 5, 2026-11-16).
+    center_h = 46 + len(core_wrapped) * _ROW_H + 14
 
     body: List[str] = []
 
@@ -158,16 +161,21 @@ def build_svg(md: Dict[str, Any], title: str) -> Tuple[str, int, int]:
         )
         ty += _ROW_H
 
-    for y, h, color in left_boxes:
+    # Spread the arrow ends along the node's edge instead of piling them
+    # into its midpoint, where two or more arrows overlapped.
+    def end_y(i: int, n: int) -> float:
+        return center_y + center_h * (i + 1) / (n + 1)
+
+    for i, (y, h, color) in enumerate(left_boxes):
         body.append(
             curved_connector(
-                left_x + _SAT_W, y + h / 2, center_x, center_y + center_h / 2, color=color
+                left_x + _SAT_W, y + h / 2, center_x, end_y(i, len(left_boxes)), color=color
             )
         )
-    for y, h, color in right_boxes:
+    for i, (y, h, color) in enumerate(right_boxes):
         body.append(
             curved_connector(
-                right_x, y + h / 2, center_x + center_w, center_y + center_h / 2, color=color
+                right_x, y + h / 2, center_x + center_w, end_y(i, len(right_boxes)), color=color
             )
         )
 
