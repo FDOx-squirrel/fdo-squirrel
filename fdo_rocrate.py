@@ -67,6 +67,16 @@ EXTENSION_CONTEXT: Dict[str, str] = {
     "prof": "http://www.w3.org/ns/dx/prof/",
 }
 
+# MD.cff `related_resources[].relation` -> schema.org property on the crate
+# root (S29, PRIMER.md). Only the values schema.org has an agreed term for;
+# isReferencedBy, isSupplementTo and isDocumentedBy stay in the TTL, where
+# they are dct:isReferencedBy / dct:relation.
+RELATION_TO_SCHEMA_ORG: Dict[str, str] = {
+    "isDerivedFrom": "isBasedOn",
+    "isPartOf": "isPartOf",
+    "references": "citation",
+}
+
 # The one file whose size/hash cannot be stated here (see module docstring).
 SELF_DESCRIBING_FILE = "fdo-metadata.ttl"
 
@@ -264,6 +274,40 @@ def build_ro_crate(
         add(e)
     if loc_id:
         root["contentLocation"] = _ref(loc_id)
+
+    # typed links to other resources (S29): the target becomes a
+    # CreativeWork entity, the root points at it with the schema.org term
+    # for the relation. Targets without an IRI have nothing to point at.
+    linked: Dict[str, List[Dict[str, str]]] = {}
+    target_notes: Dict[str, List[str]] = {}
+    for item in getattr(cw, "related_resources", None) or []:
+        if not isinstance(item, dict):
+            continue
+        prop = RELATION_TO_SCHEMA_ORG.get(item.get("relation"))
+        target = item.get("target")
+        tid = str(target.get("id") or "").strip() if isinstance(target, dict) else ""
+        if not prop or not tid.startswith(("http://", "https://")):
+            continue
+        entity: Dict[str, Any] = {"@id": tid, "@type": "CreativeWork"}
+        label = str(target.get("label") or "").strip()
+        if label:
+            entity["name"] = label
+        # The crate has no relation with properties of its own, so the note
+        # describes the target as seen from this package; several notes on
+        # one target are joined in the order of the list.
+        note = str(item.get("note") or "").strip()
+        if note:
+            notes = target_notes.setdefault(tid, [])
+            if note not in notes:
+                notes.append(note)
+            entity["description"] = " ".join(notes)
+            contextual.pop(tid, None)
+        add(entity)
+        refs = linked.setdefault(prop, [])
+        if _ref(tid) not in refs:
+            refs.append(_ref(tid))
+    for prop in sorted(linked):
+        root[prop] = linked[prop]
 
     root["conformsTo"] = _ref(PROFILE_IRI)
     add(

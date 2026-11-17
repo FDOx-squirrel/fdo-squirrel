@@ -26,6 +26,7 @@ RO-Crate / schema.org can express. Nothing is maintained by hand.
 | `publisher` | first MD.cff `publishers` entry | `Organization` |
 | `keywords` | MD.cff `keywords[].label` | keyword IRIs stay in the TTL |
 | `contentLocation` | MD.cff `spatial` | `Place` with `GeoCoordinates` (`lat`/`lon`) or `GeoShape` (`bounding_box`) |
+| `isBasedOn`, `isPartOf`, `citation` | MD.cff `related_resources` with `relation` `isDerivedFrom`, `isPartOf`, `references` | target becomes a `CreativeWork` entity (`name` from its `label`, `description` from the relation's `note`: the crate cannot give a relation properties of its own, so the note describes the target as seen from this package); only targets with an `http(s)` IRI. `isReferencedBy`, `isSupplementTo`, `isDocumentedBy` stay in the TTL, with their `note` (as a DCAT qualified relation) |
 | `hasPart` / `File` | every package member plus every generated companion file | `contentSize`, `encodingFormat`, `fdo:sha256`, `fdo:role` — values identical to the TTL's `dcat:Distribution` entries |
 | `CreateAction` | the build | `instrument` is the `fdo-squirrel` `SoftwareApplication` (name, version); `result` lists the generated files — mirrors the TTL's `prov:Activity` |
 
@@ -36,8 +37,9 @@ file, e.g. a stale `fdo-metadata.ttl`) are left out, exactly as
 ## Deliberately not in the crate (yet)
 
 These remain in `fdo-metadata.ttl` only: `temporal`, `heritage_object`,
-`technique`, `funding`, `related_resources`, WKT geometries, keyword and
-other IRIs beyond labels, identifier schemes other than `doi`/`url`.
+`technique`, `funding`, the `related_resources` relations schema.org has no
+term for (with their `note`), WKT geometries, keyword and other IRIs beyond
+labels, identifier schemes other than `doi`/`url`.
 RO-Crate has no agreed place for most of them; guessing one would put
 fdo-squirrel-specific meaning into terms other tools read differently.
 

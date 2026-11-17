@@ -10,7 +10,7 @@ metadata (RDF), an RO-Crate and a FAIR Signposting landing page.
   how it was validated.
 - [How the metadata is mapped to RO-Crate](ro-crate-mapping.md).
 - [FAIR Signposting](signposting.md): landing page, linkset, what Zenodo serves.
-- Release notes: [v1.2.1](releases/v1.2.1.md), [v1.2.0](releases/v1.2.0.md),
+- Release notes: [v1.3.0](releases/v1.3.0.md), [v1.2.1](releases/v1.2.1.md), [v1.2.0](releases/v1.2.0.md),
   [v1.1.0](releases/v1.1.0.md).
 
 Source code, issues and the full README:

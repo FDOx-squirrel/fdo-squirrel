@@ -482,6 +482,73 @@ def _emit_object_id_label_inline(
             post.append(f"{node} {label_predicate} {_ttl_lit(label)} .")
 
 
+def _bnode_prefix(key: str, index: int) -> str:
+    """Blank-node prefix unique per MD.cff field and list position.
+
+    `_emit_object_id_label_inline` numbers its nodes from 1 on every call,
+    so a shared prefix made every label-only value - a contributor without
+    an id, an object type, a second contributor - the same node, carrying
+    all their labels at once (S29, PRIMER.md). Field and position keep them
+    apart, and still give the generic and the typed link of one related
+    resource the same node."""
+    return "_:" + re.sub(r"\W", "_", key) + str(index) + "_"
+
+
+def _resolve_emit_predicate(entry: Dict[str, Any], item: Any) -> Optional[str]:
+    """Predicate for one `emit` entry of the MD.cff crosswalk.
+
+    A plain entry names its `predicate`. A `predicate_by` entry reads the
+    item's field of that name (e.g. a related resource's `relation`) and
+    looks it up in `predicate_map`; a value without a mapping returns None,
+    so that entry writes nothing for the item (S29, PRIMER.md)."""
+    if "predicate" in entry:
+        return entry["predicate"]
+    if not isinstance(item, dict):
+        return None
+    key = item.get(entry["predicate_by"])
+    return (entry.get("predicate_map") or {}).get(key)
+
+
+def _emit_qualified_relation(
+    subj: str,
+    item: Dict[str, Any],
+    entry: Dict[str, Any],
+    post: List[str],
+    bnode_prefix: str,
+    label_predicate: str = "rdfs:label",
+) -> None:
+    """DCAT qualified relation for one related resource that has a `note`.
+
+    The note belongs to the relation, not to the target: on an IRI target
+    (the scan FDO, say) it would be a statement about somebody else's
+    object. DCAT 3 has exactly this construct,
+    `dcat:qualifiedRelation [ a dcat:Relationship ; dct:relation <target> ;
+    dcat:hadRole <role> ; rdfs:comment "note" ]`. Items without a note
+    write nothing: the plain links already say everything there is to say.
+    The target is the same node the generic `dct:relation` link uses, so a
+    label-only target stays one blank node (S29, PRIMER.md)."""
+    note = str(item.get("note") or "").strip()
+    target = item.get(entry.get("from") or "target")
+    if not note or not isinstance(target, dict):
+        return
+    tid = str(target.get("id") or "").strip()
+    if tid:
+        tnode = _as_iri(tid)
+    elif str(target.get("label") or "").strip():
+        # same numbering as _emit_object_id_label_inline for a single value
+        tnode = f"{bnode_prefix}1"
+    else:
+        return
+    rel = f"{bnode_prefix}rel"
+    post.append(f"{subj} dcat:qualifiedRelation {rel} .")
+    post.append(f"{rel} a dcat:Relationship .")
+    post.append(f"{rel} dct:relation {tnode} .")
+    role = (entry.get("role_map") or {}).get(item.get("relation"))
+    if role:
+        post.append(f"{rel} dcat:hadRole {role} .")
+    post.append(f"{rel} rdfs:comment {_ttl_lit(note)} .")
+
+
 def _node_base(subj: str) -> str:
     """IRI base for nodes minted next to the dataset (temporal, geometry).
 
@@ -581,12 +648,14 @@ def _apply_md_cff_mapping(
             multiple = bool(spec.get("multiple"))
             items = val if (multiple and isinstance(val, list)) else [val]
 
-            for item in items:
+            for item_idx, item in enumerate(items):
                 if item is None:
                     continue
                 for e in spec["emit"]:
-                    if "predicate" in e:
-                        pred = e["predicate"]
+                    if "predicate" in e or "predicate_by" in e:
+                        pred = _resolve_emit_predicate(e, item)
+                        if pred is None:
+                            continue
                         src_key = e.get("from")
                         v = (
                             item
@@ -642,10 +711,21 @@ def _apply_md_cff_mapping(
                                 )
                         elif vtype == "object_id_label":
                             _emit_object_id_label_inline(
-                                pred, v, inline, post, label_predicate=label_pred
+                                pred,
+                                v,
+                                inline,
+                                post,
+                                label_predicate=label_pred,
+                                bnode_prefix=_bnode_prefix(key, item_idx),
                             )
+                            # a typed link (predicate_by) is its own
+                            # provenance field, so the report shows both
+                            # the generic and the typed statement
+                            rec_field = f"dataset.{key}.{src_key}"
+                            if "predicate_by" in e:
+                                rec_field += f".{item.get(e['predicate_by'])}"
                             tracker.record(
-                                field=f"dataset.{key}.{src_key}",
+                                field=rec_field,
                                 source="MD.cff",
                                 detail=v,
                             )
@@ -741,6 +821,21 @@ def _apply_md_cff_mapping(
                                     detail={"scheme": scheme, "value": value},
                                     count_inc=1,
                                 )
+                        elif hname == "qualified_relation" and isinstance(item, dict):
+                            _emit_qualified_relation(
+                                subj,
+                                item,
+                                e,
+                                post,
+                                bnode_prefix=_bnode_prefix(key, item_idx),
+                                label_predicate=label_pred,
+                            )
+                            if str(item.get("note") or "").strip():
+                                tracker.record(
+                                    field=f"dataset.{key}.note",
+                                    source="MD.cff",
+                                    detail=str(item["note"]).strip(),
+                                )
             continue
 
         # normal predicate mappings
@@ -751,7 +846,7 @@ def _apply_md_cff_mapping(
 
             values = val if (multiple and isinstance(val, list)) else [val]
 
-            for v in values:
+            for v_idx, v in enumerate(values):
                 if v is None:
                     continue
                 if vtype == "literal":
@@ -766,7 +861,12 @@ def _apply_md_cff_mapping(
                     inline.append(f"    {pred} {_as_iri(s) if _is_iri(s) else s} ;")
                 elif vtype == "object_id_label":
                     _emit_object_id_label_inline(
-                        pred, v, inline, post, label_predicate=label_pred
+                        pred,
+                        v,
+                        inline,
+                        post,
+                        label_predicate=label_pred,
+                        bnode_prefix=_bnode_prefix(key, v_idx),
                     )
                 elif vtype == "literal_or_object":
                     # if dict with id -> iri, if dict with label -> literal,
@@ -803,6 +903,9 @@ def _apply_md_cff_mapping(
                 count_inc=len(values),
             )
 
+    # the generic and the typed link of one related resource both write the
+    # target's label; one identical line is enough (order is kept)
+    post = list(dict.fromkeys(post))
     return inline, post
 
 

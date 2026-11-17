@@ -283,6 +283,14 @@ Eigenschaften, an denen sich ein Rebuild messen lassen muss:
 | `fdo-3d-packager` und das neue Layout (S25) | Kompatibel ohne Codeänderung: der Packager liest `fdo-metadata.ttl` und `*-fdo-bundle.zip` direkt aus dem Release-Ordner, räumt per `rmtree`/`unlink` auf (Unterordner `_work` stört nicht) | 2026-11-16 |
 | Versionssprung für S25 (S26) | `v1.2.0` (Minor): sichtbare Layout-Änderung, Inhalt des Bundles unverändert. Flo bestätigt im Dialog | 2026-11-16 |
 | `.gitignore` (S25) | `output/*` ersetzt durch `output*/` (deckt `output_url/` u. ä.), zusätzlich `out/` und `/fdo_overview.mermaid` (Wurzel-Überbleibsel von `python fdo_mermaid.py` ohne Ausgabepfad) | 2026-11-16 |
+| Typisierte Prädikate für `related_resources` (S29) | `isDerivedFrom` → `prov:wasDerivedFrom`, `isReferencedBy` → `dct:isReferencedBy`, `references` → `dct:references`, `isPartOf` → `dct:isPartOf`, `hasPart` → `dct:hasPart`. `isSupplementTo` und `isDocumentedBy` haben keinen Standardbegriff und bleiben bei `dct:relation`. Anlass: Flos erste Modelle mit einer Rekonstruktion (Scan ↔ Rekonstruktion ließ sich vorher nicht von jedem anderen Link unterscheiden) | 2026-11-17, Vorschlag |
+| `dct:relation` weiter schreiben (S29) | Ja, immer zusätzlich zum typisierten Prädikat: `dct:relation` ist der allgemeine Oberbegriff, ältere Abfragen (und die Registry) lesen ihn. Kostet eine Zeile pro Link | 2026-11-17, Vorschlag |
+| RO-Crate: Relationen (S29) | Nur wo schema.org einen Begriff hat: `isDerivedFrom` → `isBasedOn`, `isPartOf` → `isPartOf`, `references` → `citation`; Ziel als `CreativeWork` mit `name` (und `description` aus der `note`, siehe unten), nur bei `http(s)`-IRI. Übrige bleiben in der TTL (Änderung gegenüber S22, wo `related_resources` ganz fehlte) | 2026-11-17, Vorschlag |
+| Blank Nodes für Werte ohne `id` (S29) | Eindeutig pro MD.cff-Feld und Listenposition (`_:<feld><index>_<n>`) statt gemeinsam `_:obj<n>`. Vorher teilten sich z. B. ein Contributor ohne `id` und der Objekttyp denselben Knoten und trugen beide Labels | 2026-11-17 |
+| `note` an `related_resources`: TTL (S29) | Bei Einträgen mit `note` eine DCAT-Relationship: `dcat:qualifiedRelation [ a dcat:Relationship ; dct:relation <Ziel> ; dcat:hadRole <Rolle> ; rdfs:comment "note" ]`. Die Notiz gehört zur Beziehung, nicht zum Ziel (am IRI-Ziel wäre es eine Aussage über ein fremdes Objekt). Ohne `note` entsteht nichts. Als Rolle dient das typisierte Prädikat, für `isSupplementTo`/`isDocumentedBy` der IANA-Link-Typ `related`/`describedby` (Rollen-IRIs: Vorschlag) | 2026-11-17 |
+| `note` an `related_resources`: RO-Crate (S29) | Als `description` des Ziel-`CreativeWork` (mehrere Notizen am selben Ziel in Listenreihenfolge, durch Leerzeichen getrennt). Nur für Ziele, die ins Crate kommen; die Notiz einer Relation ohne schema.org-Begriff bleibt in der TTL | 2026-11-17 |
+| Sketchfab-Quelle des Packagers (S29) | Bleibt `isDerivedFrom` (also `prov:wasDerivedFrom` und `isBasedOn`); kein neuer Enum-Wert, keine Umstellung auf `references`. Bei Rekonstruktionen stehen Sketchfab-Seite und Scan nebeneinander, unterscheidbar an IRI und Label | 2026-11-17 |
+| Release für S29 (S29) | `v1.3.0` (Minor: neue Ausgabe in TTL und Crate), enthält die `note`-Abbildung; Bump in `pyproject.toml`, `CITATION.cff`, README, `docs/releases/v1.3.0.md`. Tag und GitHub-Release von Hand, danach Pin im `fdo-3d-packager` | 2026-11-17 |
 
 ## A5. Was in welchem Chat hochgeladen wird
 
@@ -331,6 +339,7 @@ groß sein (3D-Modelle im Beispielpaket).
 | S26 | Release `v1.2.0` (Versionsbump, Tag, GitHub-Release), enthält S25; danach `fdo-3d-packager`-Pin auf `v1.2.0` | fdo-squirrel | S25, von Flo lokal geprüft | **erledigt 2026-11-16** (Commit `6493f1c`, Tag `v1.2.0`, GitHub-Release; Zenodo archiviert) |
 | S27 | Korrektur `fdo_md_cff_graph.py`: Höhe des zentralen Knotens, Pfeilenden verteilt; Release `v1.2.1` | fdo-squirrel | S26 | **vorbereitet 2026-11-16** (Tag + Release von Hand, Befehle in `PATCH-README.md`) |
 | S28 | Anleitung „RO-Crate validieren" (`docs/validate-ro-crate.md`), `docs/index.md` + `_config.yml` für GitHub Pages, Verweise in README und `docs/ro-crate-profile.md` | fdo-squirrel | S22, S27 | **vorbereitet 2026-11-16** (Pages von Hand einschalten) |
+| S29 | `related_resources`: Relationstyp bleibt erhalten (TTL: typisiertes Prädikat zusätzlich zu `dct:relation`; Crate: `isBasedOn`/`isPartOf`/`citation`), `note` als DCAT-Relationship bzw. Crate-`description`; dazu Blank-Node-Kollision zwischen label-only-Werten gefixt; Release `v1.3.0` | fdo-squirrel | S22 | **vorbereitet 2026-11-17** (Patch, von Flo noch anzuwenden, zu committen und zu taggen) |
 
 S2, S3, S4 und S5 sind voneinander unabhängig und können in beliebiger
 Reihenfolge angegangen werden. S6, S7, S8 hängen an einem echten Lauf mit
@@ -1762,6 +1771,81 @@ Sandkasten nicht (kein Zugriff auf die abgerufenen Ressourcen, `403`);
 die Zahlen auf der Seite stammen aus Flos lokalen Läufen. Jekyll-Rendering
 nicht lokal gebaut.
 
+## S29 — `related_resources`: Relationstyp erhalten
+
+**Ziel:** Ein Link zwischen zwei FDOx sagt in TTL und Crate, *was* er
+bedeutet (abgeleitet von, Teil von, zitiert), nicht nur dass er existiert.
+
+**Uploads:** keine über das Standard-Bundle hinaus.
+
+**Befund (2026-11-17, vier echte FDOx):** Flos erste Modelle mit einer
+Rekonstruktion (zwei LEGO-Pyramiden, je Scan und Rekonstruktion, gebaut mit
+`fdo-3d-packager`). `MD.cff` trägt `related_resources[].relation`
+(`isDerivedFrom`, `isReferencedBy`, …), aber `schemas/md_cff/crosswalk_md_cff_to_rdf.yaml`
+bildete jeden Wert auf `dct:relation` ab: im TTL war nicht zu erkennen,
+welcher FDOx der Scan und welcher die Rekonstruktion ist; im Crate fehlten
+`related_resources` ganz (S22 bewusst, siehe `docs/ro-crate-mapping.md`).
+Beim Prüfen fiel ein zweiter Fehler auf: `_emit_object_id_label_inline()`
+nummeriert Blank Nodes bei jedem Aufruf neu ab `_:obj1`, also teilten sich
+alle Werte ohne `id` (Contributor „Claude", Objekttyp „LEGO model", ein
+zweiter Contributor) denselben Knoten. In der TTL war „Claude" dadurch
+selbst vom Typ „LEGO model".
+
+**Substanz:**
+
+| `relation` in MD.cff | TTL (zusätzlich zu `dct:relation`) | RO-Crate (Root) |
+|---|---|---|
+| `isDerivedFrom` | `prov:wasDerivedFrom` | `isBasedOn` |
+| `isReferencedBy` | `dct:isReferencedBy` | — |
+| `references` | `dct:references` | `citation` |
+| `isPartOf` | `dct:isPartOf` | `isPartOf` |
+| `hasPart` | `dct:hasPart` | — |
+| `isSupplementTo`, `isDocumentedBy` | — (nur `dct:relation`) | — |
+
+Umsetzung: neuer `emit`-Eintrag mit `predicate_by`/`predicate_map` im
+Crosswalk-YAML, ausgewertet von `_resolve_emit_predicate()` in
+`fdo/fdo_rdf.py`; im Crate `RELATION_TO_SCHEMA_ORG` in `fdo_rocrate.py`.
+Blank Nodes: `_bnode_prefix(feld, index)`. Doppelte Label-Zeilen (generischer
+und typisierter Link schreiben dasselbe Label) werden am Ende von
+`_apply_md_cff_mapping()` entfernt, Reihenfolge bleibt. Der JSON-Bericht
+führt den typisierten Link als eigenes Feld
+`dataset.related_resources.target.<relation>`.
+
+Die `note` (Nachtrag 2026-11-17, Dialog mit Flo): `MD.cff` erlaubt an jedem
+Eintrag eine freie `note`; sie fiel bisher weg. Sie gehört zur Beziehung,
+nicht zum Ziel. TTL: der neue `emit`-Eintrag `handler: qualified_relation`
+(Crosswalk-YAML, `role_map` für die Rolle) schreibt, nur wenn eine `note`
+da ist, `dcat:qualifiedRelation` mit `a dcat:Relationship`, `dct:relation`
+(derselbe Knoten wie der einfache Link), `dcat:hadRole` und `rdfs:comment`
+(`_emit_qualified_relation()` in `fdo/fdo_rdf.py`). Crate: die `note` wird
+`description` des Ziel-`CreativeWork`. Der JSON-Bericht führt sie als
+`dataset.related_resources.note`.
+
+**Abnahme:** `python -m unittest discover -s tests` grün (neu:
+`tests/test_related_resources.py`, 33 Tests); zwei Läufe hintereinander über
+ein Paket mit `related_resources`: `fdo-metadata.ttl`,
+`ro-crate-metadata.json`, `rdf_modelling_report.json` byte-identisch; in der
+TTL trägt der Contributor ohne `id` nur sein eigenes Label, und ein Eintrag mit `note` hat eine `dcat:Relationship` mit dieser `note`.
+
+### Vorbereitet 2026-11-17
+
+Gegen vier echte Pakete gelaufen (die Pakete aus den Finished Bundles der
+vier Pyramiden-FDOx, je zwei Läufe): TTL, Crate und JSON-Bericht
+byte-identisch; die typisierten Prädikate stehen in der TTL, `isBasedOn` im
+Crate; Contributor und Objekttyp sind getrennte Knoten. Gegenüber dem
+Original ändern sich dabei auch die `dcat:Distribution`-Einträge für
+Bericht, Diagramme und Landing Page (Größe/Hash), weil sich deren Inhalt
+ändert. **Nicht geprüft:** `rocrate-validator` auf dem neuen Crate (im
+Sandkasten `403` beim Abruf des Kontexts); Flo lässt ihn lokal laufen
+(`docs/validate-ro-crate.md`). Version auf `1.3.0` gebumpt (Flos
+Entscheidung im Dialog); Tag und GitHub-Release macht Flo von Hand nach
+dem lokalen Lauf, danach der Pin im `fdo-3d-packager`.
+
+Mit der `note`-Abbildung nachgezogen (Paket der Rekonstruktion, zwei Läufe
+byte-identisch): die Notiz „Scan this reconstruction was measured from …"
+steht als `dcat:Relationship` mit Rolle `prov:wasDerivedFrom` in der TTL und
+als `description` des Scan-Ziels im Crate.
+
 ## S9 — README.md auffrischen
 
 **Ziel:** die drei durch S1–S5 entstandenen Diskrepanzen zwischen
@@ -2178,6 +2262,19 @@ nicht sofort wieder veraltet ist (S9 hat genau das kritisiert).
   Crate die alte Zahl, bis `pip install -e .` neu läuft. Möglicher Fix: bei
   einer `pyproject.toml` neben dem Modul diese vorziehen. Eigene
   Entscheidung (ändert alte Verhalten).
+- **Sketchfab-Quelle als `isDerivedFrom`** (gefunden 2026-11-17, S29):
+  `fdo-3d-packager` schreibt automatisch eine `isDerivedFrom`-Beziehung auf
+  die Sketchfab-Seite des Modells. Seit S29 wird daraus
+  `prov:wasDerivedFrom`; bei einem FDOx, das zusätzlich von einem anderen
+  FDOx abgeleitet ist (Rekonstruktion ← Scan), stehen dann zwei
+  Ableitungen nebeneinander, die man nur an der IRI unterscheidet.
+  Entschieden 2026-11-17 (A4): bleibt `isDerivedFrom`. Offen nur, ob der
+  Packager die Sketchfab-Seite künftig mit Label „Source: …" kennzeichnet
+  (Entscheidung in `fdo-3d-packager`, eigener Chat, A3).
+- **Rollen-IRIs der DCAT-Relationship** (S29): für `isSupplementTo` und
+  `isDocumentedBy` stehen die IANA-Link-Typen `related` und `describedby`
+  (Vorschlag, A4). DCAT-AP verlangt `dcat:hadRole`; ob die Registry /
+  VZG-Ingestion die Relationship liest, ist ungeprüft.
 - **Visuals und das Crate** (S25 nebenbei): `fdox-visuals` bekommt eine
   Grafik "ein Bundle, drei Sichten" und erweiterte Architektur; das offizielle
   RO-Crate-Logo legt Flo selbst ab (Nutzungsbedingungen ungeklärt), Details im

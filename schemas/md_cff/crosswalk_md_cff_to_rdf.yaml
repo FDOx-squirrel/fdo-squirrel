@@ -141,12 +141,41 @@ mappings:
         value_type: "iri_optional"
 
   # ---------------- Related Resources ----------------
+  # `dct:relation` is the generic link and is always written (older
+  # consumers query it). `predicate_by` adds the typed link on top, chosen
+  # by the item's `relation`: the DataCite-style value in MD.cff becomes a
+  # predicate with the same direction and meaning (S29, PRIMER.md). Values
+  # with no standard counterpart (isSupplementTo, isDocumentedBy) have no
+  # entry and stay `dct:relation` only.
   related_resources:
     multiple: true
     emit:
       - predicate: "dct:relation"
         from: "target"
         value_type: "object_id_label"
+      - predicate_by: "relation"
+        predicate_map:
+          isDerivedFrom: "prov:wasDerivedFrom"
+          isReferencedBy: "dct:isReferencedBy"
+          references: "dct:references"
+          isPartOf: "dct:isPartOf"
+          hasPart: "dct:hasPart"
+        from: "target"
+        value_type: "object_id_label"
+      # A `note` belongs to the relation, so it hangs on a DCAT qualified
+      # relation (written only for items that have a note). `role_map` is
+      # the DCAT role: the typed predicate where one exists, the IANA link
+      # relation for the two values that have none.
+      - handler: "qualified_relation"
+        from: "target"
+        role_map:
+          isDerivedFrom: "prov:wasDerivedFrom"
+          isReferencedBy: "dct:isReferencedBy"
+          references: "dct:references"
+          isPartOf: "dct:isPartOf"
+          hasPart: "dct:hasPart"
+          isSupplementTo: "<http://www.iana.org/assignments/relation/related>"
+          isDocumentedBy: "<http://www.iana.org/assignments/relation/describedby>"
 
   # ---------------- Identifiers ----------------
   identifiers:
